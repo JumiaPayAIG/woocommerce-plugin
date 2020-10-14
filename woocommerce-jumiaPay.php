@@ -40,10 +40,10 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
 
 
-           /*
-            * plugin construct which contain :
-            * main (variablues , methods , functions, settings in the admin , web hook)
-            */
+            /*
+             * plugin construct which contain :
+             * main (variablues , methods , functions, settings in the admin , web hook)
+             */
             public function __construct() {
 
                 //plugin main settings for the admin and check out page
@@ -85,6 +85,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 //action hook for the payment return
                 add_action( 'woocommerce_api_payment_update', array( $this, 'payment_update' ) );
+
 
                 //action hook for the cancel the order
                 add_action( 'woocommerce_order_status_changed',array( $this, 'order_cancelled' ),10,3);
@@ -193,6 +194,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
             */
             public function process_payment($order_id)
             {
+                global $woocommerce;
+
                 $logger = wc_get_logger();
 
                 // add to woocommerce log file the order id
@@ -209,8 +212,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 $logger->info( wc_print_r( 'home url = '.get_home_url(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                 $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
-
-                global $woocommerce;
 
                 //unique id for the order purchasereferenceId + website name + order id
                 //$oName=str_replace(' ','',get_bloginfo( 'name' ));
@@ -260,7 +261,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             // add to woocommerce log file the country code ( EG ) ( Live )
                             $logger->info( wc_print_r( 'the country code ( EG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                             $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            
+
                             // add to woocommerce log file the country end point ( EG ) ( Live )
                             $logger->info( wc_print_r( 'the country end point ( EG ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                             $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
@@ -269,7 +270,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         case "Ghana":
                             $countryCode='GH';
                             $countryEndPoint='https://api-staging-pay.jumia.com.ng';
-                            
+
                             // add to woocommerce log file the country code ( GH ) ( Live )
                             $logger->info( wc_print_r( 'the country code ( GH ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                             $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
@@ -361,7 +362,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     }
                     $shop_config_key=$this->shop_config_key;
                     $api_key=$this->api_key;
-                 
+
                     // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key )
                     $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( live )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                     $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
@@ -731,54 +732,77 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
             * update the order payment status function
             * the return from the jumiapay gat way
             */
-            public function payment_update() {
+            public function payment_update($param1) {
+                $logger = wc_get_logger();
 
-//                $logger = wc_get_logger();
-//
-//                //get the hooked information using get from the callback function
-//                $orderid=$_GET['orderid'];
-//
-//                $paymentStatus=$_GET['paymentStatus'];
-//
-//
-//                // add to woocommerce log file the return url trigger the function successfully
-//                $logger->info( wc_print_r( 'the return url trigger the function successfully', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//
-//
-//
-//                //check the status then redirect to the order page
-//                if($paymentStatus!='success'){
-//                    $order = wc_get_order( $orderid );
-//                    $order->update_status('cancelled', 'woocommerce' );
-//                    wc_add_notice('Order Cancelled.', 'error');
-//                    wp_safe_redirect(wc_get_page_permalink('cart'));
-//
-//                    // add to woocommerce log file the payment status ( failure ) ( Cancelled )
-//                    $logger->info( wc_print_r( 'the payment status ( failure ) ( Cancelled )', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//
-//
-//                }
-//                else{
-//                    $order = wc_get_order( $orderid );
-//                    $order->payment_complete();
-//                    wp_safe_redirect($this->get_return_url( $order ));
-//
-//                    // add to woocommerce log file the payment status ( success ) ( update payment status to Processing )
-//                    $logger->info( wc_print_r( 'the payment status ( success ) ( update payment status to Processing ) ', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-//
-//
-//                }
+                //get the hooked information using get from the callback function
+                $orderid=$_GET['orderid'];
+                $paymentStatus=$_GET['paymentStatus'];
 
+
+
+
+                //check the status then redirect to the order page
+                if($paymentStatus!='success'){
+                    $order = wc_get_order( $orderid );
+                    $order->update_status('cancelled', 'woocommerce' );
+                    wc_add_notice('Order Cancelled.', 'error');
+                    wp_safe_redirect(wc_get_page_permalink('cart'));
+
+                    // add to woocommerce log file the payment status ( failure ) ( Cancelled )
+                    $logger->info( wc_print_r( 'the payment status ( failure ) ( Cancelled )', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+
+
+                }
+                else{
+                    $order = wc_get_order( $orderid );
+                    $obj =json_decode($param1, true);
+
+                    if($obj['transactionEvents'][0]['newStatus']=="Created"){
+                        $order->update_status('Pending');
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Confirmed"){
+                        $order->update_status('Pending');
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Committed"){
+                        $order->update_status('Pending');
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Completed"){
+                        $order->payment_complete();
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Failed"){
+                        $order->update_status('Failed');
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Cancelled"){
+                        $order->update_status('Cancelled');
+                    }
+                    if($obj['transactionEvents'][0]['newStatus']=="Expired"){
+                        $order->update_status('Expired');
+                    }
+
+
+
+                    wp_safe_redirect($this->get_return_url( $order ));
+
+                    // add to woocommerce log file the payment status ( success ) ( update payment status to Processing )
+                    $logger->info( wc_print_r( 'the payment status ( success ) ( update payment status to Processing ) ', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+
+
+
+                    $logger->info( wc_print_r( 'json object'.$obj, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+
+
+                }
             }
 
 
-           /*
-           * refund function
-           * contain the refund api
-           */
+            /*
+            * refund function
+            * contain the refund api
+            */
             public function process_refund( $order_id,  $amount = null, $reason = '' ) {
 
                 $logger = wc_get_logger();
@@ -786,9 +810,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 // refunded order
                 $order = wc_get_order( $order_id );
 
-
-                // create refund unique Id refundreferenceId + website name + order id
-                $oName=str_replace(' ','',get_bloginfo( 'name' ));
                 $refund_merchantReferenceId="refundreferenceId".$order_id;
 
                 $refund_merchantReferenceId = str_replace(' ', '', $refund_merchantReferenceId); // Replaces all spaces with hyphens.
@@ -1111,7 +1132,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             }
                             else{
                                 if(!is_admin()){
-                                wc_add_notice('Connection error.', 'error');}
+                                    wc_add_notice('Connection error.', 'error');}
                                 // add to woocommerce log file the refund endpoint
                                 $logger->info( wc_print_r( 'the cancel status = This order can not be cancelled case Connection error', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                                 $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
