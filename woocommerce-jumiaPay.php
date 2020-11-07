@@ -735,7 +735,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 if($paymentStatus=='failure'){
                     $order->update_status('cancelled', 'woocommerce' );
                     wc_add_notice('Order Cancelled.', 'error');
-                    wp_safe_redirect(wc_get_page_permalink('cart'),$status = 200);
+                    wp_safe_redirect(wc_get_page_permalink('cart'));
 
                     // add to woocommerce log file the payment status ( failure ) ( Cancelled )
                     $logger->info( wc_print_r( 'the payment status ( failure ) ( Cancelled )', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
@@ -746,9 +746,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     $logger->info( wc_print_r( 'paymentStatus = '.$paymentStatus, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
                     $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
 
-                    wp_safe_redirect($this->get_return_url( $order ),$status = 200);
+                    wp_safe_redirect($this->get_return_url( $order ));
                 }
-                if(isset($_POST) && $paymentStatus!='failure'){
+                if($_SERVER['REQUEST_METHOD'] === 'POST' && $paymentStatus!='failure'){
 
                     $body = file_get_contents('php://input');
                     $DecodeBody=urldecode($body);
@@ -761,7 +761,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                     $order = wc_get_order( $orderid );
 
-                    if($order->get_status()!= 'Cancelled' || $order->get_status() !=  'Processing' || $order->get_status() !='Failed '){
+                    if($order->get_status()!= 'cancelled'  &&  $order->get_status() !=  'processing' || $order->get_status() !='failed '){
                         if($JsonDecodeBody[0]['newStatus']=="Created"){
                             $order->update_status('Pending');
                             $order->add_order_note( 'Payment Created.', true );
@@ -797,7 +797,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                         $logger->info( wc_print_r( 'Decode Body array ='.$DecodeBody, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
                         $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                        wp_safe_redirect($this->get_return_url( $order ,$status = 200 ));
+                        wp_send_json(['success' => true], 200);
                     }
 
 
@@ -815,8 +815,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 // refunded order
                 $order = wc_get_order( $order_id );
-
-                $refund_merchantReferenceId="refundreferenceId".$order_id;
+                $date = date_create();
+                $newDate=date_format($date, 'U');
+                $refund_merchantReferenceId="refundreferenceId".$order_id.$newDate;
 
                 $refund_merchantReferenceId = str_replace(' ', '', $refund_merchantReferenceId); // Replaces all spaces with hyphens.
                 $refund_merchantReferenceId = preg_replace('/[^A-Za-z0-9\-]/', '', $refund_merchantReferenceId); // Removes special chars.
