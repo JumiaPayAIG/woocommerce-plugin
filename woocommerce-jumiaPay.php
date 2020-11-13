@@ -804,16 +804,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 }
 
-                if($paymentStatus!='failure' || $paymentStatus!='success'){
-                    $order->update_status('cancelled', 'woocommerce' );
-                    wc_add_notice('Order Cancelled.', 'error');
-                    wp_safe_redirect(wc_get_page_permalink('cart'));
 
-                    // add to woocommerce log file the payment status ( failure ) ( Cancelled )
-                    $logger->info( wc_print_r( 'the payment status ( failure ) ( Cancelled )', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-
-                }
             }
 
 
@@ -1100,9 +1091,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                 }
-                
-              
-                
+
+
+
                 // the data array
                 $data = [
                     "shopConfig" => $shop_config_key,
@@ -1443,7 +1434,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                     }
-                   
+
                     $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
                     $data = [
                         "shopConfig" => $shop_config_key,
