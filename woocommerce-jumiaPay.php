@@ -463,8 +463,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         $logger = wc_get_logger();
 
                         $logger->info( wc_print_r( 'Error On Request Jpay Merchant Create', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( 'Error Message = '.$response->get_error_message(), true ), array( 'source' => 'jumiaPay log file' ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                        $logger->info( wc_print_r( 'Error Message = '.$response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                        $logger->info( wc_print_r( '==========================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                         //error for the connection with jumiaPay api that mean the api not trigger at all
                         wc_add_notice('Connection error please try again later.', 'error');
@@ -620,8 +620,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 else {
 
                     $logger->info( wc_print_r( 'Error On Request Jpay Merchat Refund', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( 'Error Message = '.$refund_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file' ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( 'Error Message = '.$refund_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( '====================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                     $order->add_order_note("Order Refund via JumiaPay Failed - Reason: Connection Failed", true);
 
@@ -671,8 +671,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         }
                         else{
                                 $logger->info( wc_print_r( 'Error On Request Jpay Merchat Cancel', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file' ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                                $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );                                $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                                 $order->add_order_note("JumiaPay Payment cancellation failed - Reason: Connection Failed", true);
                                 return false;
