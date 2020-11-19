@@ -494,8 +494,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 // RETURN URL HANDLE
                 if($paymentStatus=='failure'){
 
-                    wc_add_notice('Payment Cancelled.', 'error');
-                    wp_safe_redirect(wc_get_page_permalink('cart'));
+                    wc_add_notice('Payment Cancelled or Failed', 'error');
+                    wp_safe_redirect(wc_get_page_permalink('checkout'));
                 }
                 if($paymentStatus=='success'){
                     wp_safe_redirect($this->get_return_url( $order ));
