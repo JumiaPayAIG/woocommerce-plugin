@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: woocommerce jumiaPay
  * Plugin URI: http://www.pharaohsoft.com/
@@ -37,8 +36,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
         // start write to woocommerce log file
         //extend woocommerce functions
         class WC_Gateway_jumiaPay_Gateway extends WC_Payment_Gateway {
-
-
 
             /*
              * plugin construct which contain :
@@ -86,9 +83,10 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 //action hook for the payment return
                 add_action( 'woocommerce_api_payment_update', array( $this, 'payment_update' ) );
 
-
                 //action hook for the cancel the order
                 add_action( 'woocommerce_order_status_changed',array( $this, 'order_cancelled' ),10,3);
+
+                add_filter( 'woocommerce_valid_order_statuses_for_cancel', array( $this,'customer_order_cancelled'), 10, 2 );
 
             }
 
@@ -187,6 +185,122 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
             }
 
+            private function getJumiaPayUrl() {
+                switch ($this->country_code) {
+                    case "Egypt":
+                        $tld='.jumia.com.ng';
+                        break;
+                    case "Ghana":
+                        $tld='.jumia.com.gh';
+                        break;
+                    case "Ivory-Coast":
+                        $tld='.jumia.ci';
+                        break;
+                    case "Kenya":
+                        $tld='.jumia.co.ke';
+                        break;
+                    case "Morocco":
+                        $tld='.jumia.ma';
+                        break;
+                    case "Nigeria":
+                        $tld='.jumia.com.ng';
+                        break;
+                    case "Tunisia":
+                        $tld='.jumia.com.tn';
+                        break;
+                    case "Uganda":
+                        $tld='.jumia.ug';
+                        break;
+                }
+
+                if($this->environment=="Live"){
+                    return 'https://api-pay'.$tld;
+                }
+                if($this->environment=="Sandbox"){
+                    return 'https://api-sandbox-pay'.$tld;
+                }
+                return '';
+            }
+
+            private function getJumiaPayCountryCode() {
+                switch ($this->country_code) {
+                    case "Egypt":
+                        $countryCode='EG';
+                        break;
+                    case "Ghana":
+                        $countryCode='GH';
+                        break;
+                    case "Ivory-Coast":
+                        $countryCode='CI';
+                        break;
+                    case "Kenya":
+                        $countryCode='KE';
+                        break;
+                    case "Morocco":
+                        $countryCode='MA';
+                        break;
+                    case "Nigeria":
+                        $countryCode='NG';
+                        break;
+                    case "Tunisia":
+                        $countryCode='TN';
+                        break;
+                    case "Uganda":
+                        $countryCode='UG';
+                        break;
+                }
+
+                return $countryCode;
+            }
+
+            private function getJumiaPayShopKey() {
+                if($this->environment=="Live"){
+                    return $this->shop_config_key;
+                }
+
+                if($this->environment=="Sandbox"){
+                    return $this->sandbox_shop_config_key;
+                }
+            }
+
+            private function getJumiaPayApiKey() {
+                if($this->environment=="Live"){
+                    return $this->api_key;
+                }
+
+                if($this->environment=="Sandbox"){
+                    return $this->sandbox_api_key;
+                }
+            }
+
+
+            private function makeRequest($method, $url, $data=null) {
+                if ($data != null) {
+                    $data = wp_json_encode( $data );
+                }
+
+                /*
+                * the options array contain the header for the api
+                */
+                $options = [
+                    'body'        => $data,
+                    'headers'     => [
+                        "apikey"=> $this->getJumiaPayApiKey(),
+                        "Content-Type"=> "application/json",
+                    ],
+                    'timeout'     => 60,
+                    'redirection' => 5,
+                    'blocking'    => true,
+                    'httpversion' => '1.1',
+                    'sslverify'   => false,
+                    'data_format' => 'body',
+                ];
+
+
+                if ($method == 'post') {
+                    return wp_remote_post( $url, $options );
+                }
+            }
 
             /*
              * create the payment order function
@@ -198,26 +312,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 $logger = wc_get_logger();
 
-                // add to woocommerce log file the order id
-                $logger->info( wc_print_r( 'order id = '.$order_id, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
-                // add to woocommerce log file the order id
-                $logger->info( wc_print_r( 'site url = '.get_site_url(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
-                // add to woocommerce log file the order id
-                $logger->info( wc_print_r( 'home url = '.get_home_url(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
                 $date = date_create();
                 $newDate=date_format($date, 'U');
                 $merchantReferenceId="purchasereferenceId".$order_id.$newDate;
-
-                // add to woocommerce log file the merchant Reference Id
-                $logger->info( wc_print_r( 'merchant Reference Id before the preg function ( this id contain fix string + the order id )= '.$merchantReferenceId, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
                 $merchantReferenceId = str_replace(' ', '', $merchantReferenceId); // Replaces all spaces with hyphens.
                 $merchantReferenceId = preg_replace('/[^A-Za-z0-9\-]/', '', $merchantReferenceId); // Removes special chars.
@@ -226,287 +323,20 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     $merchantReferenceId= substr($merchantReferenceId,0,250);
                 }
 
-                // add to woocommerce log file the merchant Reference Id
-                $logger->info( wc_print_r( 'the last merchant Reference Id ( this id generate after remove any special characters and after the length check to be less 255 characters )= '.$merchantReferenceId, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
 
                 // we need it to get any order detailes
                 $order = wc_get_order($order_id);
 
-                // add to woocommerce log file the order array before trigger the api
-                $logger->info( wc_print_r( 'the order array before trigger the api = '.$order, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
-                /*
-                 * switch case to get country code and country api
-                 */
-                if($this->environment=="Live"){
-                    // add to woocommerce log file the live environment
-                    $logger->info( wc_print_r( 'the environment ( live ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    switch ($this->country_code) {
-                        case "Egypt":
-                            $countryCode='EG';
-                            $countryEndPoint='https://api-pay.jumia.com.eg/';
-                            // add to woocommerce log file the country code ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( EG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( EG ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ghana":
-                            $countryCode='GH';
-                            $countryEndPoint='https://api-pay.jumia.com.gh/';
-
-                            // add to woocommerce log file the country code ( GH ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( GH ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( GH ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( GH ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ivory-Coast":
-                            $countryCode='CI';
-                            $countryEndPoint='https://api-pay.jumia.ci/';
-
-                            // add to woocommerce log file the country code ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( CI ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( CI ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( CI ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Kenya":
-                            $countryCode='KE';
-                            $countryEndPoint='https://api-pay.jumia.co.ke/';
-
-                            // add to woocommerce log file the country code ( KE ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( KE ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( KE ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( KE ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Morocco":
-                            $countryCode='MA';
-                            $countryEndPoint='https://api-pay.jumia.ma/';
-
-                            // add to woocommerce log file the country code ( MA ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( MA ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( MA ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( MA ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Nigeria":
-                            $countryCode='NG';
-                            $countryEndPoint='https://api-pay.jumia.com.ng/';
-
-                            // add to woocommerce log file the country code ( NG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( NG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( NG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( NG ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Tunisia":
-                            $countryCode='TN';
-                            $countryEndPoint='https://api-pay.jumia.com.tn/';
-
-                            // add to woocommerce log file the country code ( TN ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( TN ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( TN ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( TN ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Uganda":
-                            $countryCode='UG';
-                            $countryEndPoint='https://api-pay.jumia.ug/';
-
-                            // add to woocommerce log file the country code ( UG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( UG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( UG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( UG ) ( Live ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-
-                    }
-                    $shop_config_key=$this->shop_config_key;
-                    $api_key=$this->api_key;
-
-                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key )
-                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( live )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )
-                    $logger->info( wc_print_r( 'the the Merchant Api Key = $api_key ( my Merchant Api Key ) ( live )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                }
-                if($this->environment=="Sandbox"){
-                    // add to woocommerce log file the live environment
-                    $logger->info( wc_print_r( 'the environment ( Sandbox ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    switch ($this->sandbox_country_code) {
-                        case "Egypt":
-                            $countryCode='EG';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.com.eg/';
-                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( EG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( EG ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ghana":
-                            $countryCode='GH';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.com.gh/';
-
-                            // add to woocommerce log file the country code ( GH ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( GH ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( GH ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( GH ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ivory-Coast":
-                            $countryCode='CI';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.ci/';
-
-                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( CI ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( CI ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( CI ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Kenya":
-                            $countryCode='KE';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.co.ke/';
-
-                            // add to woocommerce log file the country code ( KE ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( KE ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( KE ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( KE ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Morocco":
-                            $countryCode='MA';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.ma/';
-
-                            // add to woocommerce log file the country code ( MA ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( MA ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( MA ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( MA ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Nigeria":
-                            $countryCode='NG';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.com.ng/';
-
-                            // add to woocommerce log file the country code ( NG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( NG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( NG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( NG ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Tunisia":
-                            $countryCode='TN';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.com.tn/';
-
-                            // add to woocommerce log file the country code ( TN ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( TN ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( TN ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( TN ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Uganda":
-                            $countryCode='UG';
-                            $countryEndPoint='https://api-sandbox-pay.jumia.ug/';
-
-                            // add to woocommerce log file the country code ( UG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( UG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( UG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( UG ) ( sandbox ) = '.$countryEndPoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-
-                    }
-                    $shop_config_key=$this->sandbox_shop_config_key;
-                    $api_key=$this->sandbox_api_key;
-
-                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )
-                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )( sandbox )
-                    $logger->info( wc_print_r( 'the Merchant Api Key = $api_key ( my Merchant Api Key ) ( sandbox )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                }
-
+                $countryEndPoint=$this->getJumiaPayUrl();
+                $countryCode=$this->getJumiaPayCountryCode();
+                $shop_config_key=$this->getJumiaPayShopKey();
 
                 // start the create api
                 $shop_currency =get_woocommerce_currency();
 
-                // add to woocommerce log file the shop currency
-                $logger->info( wc_print_r( 'the shop currency = '.$shop_currency, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
                 $create_endpoint = $countryEndPoint.'/merchant/create';
 
-                // add to woocommerce log file the create end point
-                $logger->info( wc_print_r( 'the create end point = '.$create_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
                 $items = $order->get_items();
-
 
                 $basketItems=array();
                 $home_url=get_home_url();
@@ -590,59 +420,16 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     "merchantReferenceId"=> $merchantReferenceId
                 ];
 
-
-
-                $data = wp_json_encode( $data );
-
-                // add to woocommerce log file the data array
-                $logger->info( wc_print_r( 'the data array = '.$data, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
-                /*
-                * the options array contain the header for the api
-                */
-                $options = [
-                    'body'        => $data,
-                    'headers'     => [
-                        "apikey"=> $api_key,
-                        "Content-Type"=> "application/json",
-                    ],
-                    'timeout'     => 0,
-                    'redirection' => 5,
-                    'blocking'    => true,
-                    'httpversion' => '1.1',
-                    'sslverify'   => false,
-                    'data_format' => 'body',
-                ];
-
-
-                $myTestOptions = wp_json_encode( $options );
-
-                // add to woocommerce log file the options array
-                $logger->info( wc_print_r( 'the options array = '.$myTestOptions, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
-                /*
-                * Your API interaction could be built with wp_remote_post()
-                 * trigger the api and get the respond
-                */
-                $response = wp_remote_post( $create_endpoint, $options );
-
+                $response = $this->makeRequest('post', $create_endpoint, $data);
 
 
                 // check for the respond errors
                 if (!is_wp_error($response)) {
 
-
                     $body = json_decode($response['body'], true);
-
-
 
                     // check for the respond body
                     if ($body['success'] == 'true') {
-
 
                         //get the checkout url from the respond
                         $checkoutUrl= $body['payload']['checkoutUrl'];
@@ -650,23 +437,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         //get the purchaseId url from the respond
                         $purchaseId= $body['payload']['purchaseId'];
 
-
                         //save the purchaseId and the merchantReferenceId in the database
                         update_post_meta( $order_id, '_purchaseId', $purchaseId );
                         update_post_meta( $order_id, '_merchantReferenceId', $merchantReferenceId );
-                        WC()->cart->empty_cart();
-
-                        // add to woocommerce log file the response response status
-                        $logger->info( wc_print_r( 'the response status = success', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the checkout Url
-                        $logger->info( wc_print_r( 'the checkout Url = '.$checkoutUrl, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the purchase Id
-                        $logger->info( wc_print_r( 'the purchasedId = '.$purchaseId, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
 
                         //redirect to jumiaPay gateway
@@ -680,37 +453,22 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         //error for the bad requests like 400 and so on
                         wc_add_notice('Error payment failed case '.$body['payload'][0]['description'].' code-'.$body['payload'][0]['code'],'error');
 
-                        // add to woocommerce log file the response response status
-                        $logger->info( wc_print_r( 'the response status = fail', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the fail description
-                        $logger->info( wc_print_r( 'the fail description = '.$body['payload'][0]['description'], true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the fail code
-                        $logger->info( wc_print_r( 'the fail code = '.$body['payload'][0]['code'], true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
                         WC()->cart->empty_cart();
+                        wp_delete_post( $order_id, false );
                         return;
                     }
 
                 }
                 else {
 
+                    $logger = wc_get_logger();
+
+                    $logger->info( wc_print_r( 'Error On Request Jpay Merchant Create', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( 'Error Message = '.$response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( '==========================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+
                     //error for the connection with jumiaPay api that mean the api not trigger at all
                     wc_add_notice('Connection error please try again later.', 'error');
-
-                    // add to woocommerce log file the fail description
-                    $logger->info( wc_print_r( 'the fail description = Internal Server Error', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    // add to woocommerce log file the fail code
-                    $logger->info( wc_print_r( 'the fail code = 500', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
 
                     WC()->cart->empty_cart();
                     wp_delete_post( $order_id, false );
@@ -728,26 +486,23 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
             public function payment_update() {
                 $logger = wc_get_logger();
 
+
                 //get the hooked information using get from the callback function
-                $orderid=$_GET['orderid'];
-                $paymentStatus=$_GET['paymentStatus'];
+                $orderid= isset($_GET['orderid']) ? $_GET['orderid'] : '';
+                $paymentStatus= isset($_GET['paymentStatus']) ? $_GET['paymentStatus'] : '';
                 $order = wc_get_order($orderid);
+
+                // RETURN URL HANDLE
                 if($paymentStatus=='failure'){
-                    $order->update_status('cancelled', 'woocommerce' );
-                    wc_add_notice('Order Cancelled.', 'error');
+
+                    wc_add_notice('Payment Cancelled.', 'error');
                     wp_safe_redirect(wc_get_page_permalink('cart'));
-
-                    // add to woocommerce log file the payment status ( failure ) ( Cancelled )
-                    $logger->info( wc_print_r( 'the payment status ( failure ) ( Cancelled )', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-
                 }
                 if($paymentStatus=='success'){
-                    $logger->info( wc_print_r( 'paymentStatus = '.$paymentStatus, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-
                     wp_safe_redirect($this->get_return_url( $order ));
                 }
+
+                // CALLBACK HANDLE
                 if($_SERVER['REQUEST_METHOD'] === 'POST' && $paymentStatus!='failure'){
 
                     $body = file_get_contents('php://input');
@@ -758,10 +513,9 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     // save the transactionEvents for debugging purposes ( this will be removed in the production version )
                     update_post_meta($orderid,'bodyArray',$bodyArray);
 
-
                     $order = wc_get_order( $orderid );
 
-                    if($order->get_status()!= 'cancelled'  &&  $order->get_status() !=  'processing' || $order->get_status() !='failed '){
+                    if($order->get_status() == 'pending'){
                         if($JsonDecodeBody[0]['newStatus']=="Created"){
                             $order->update_status('Pending');
                             $order->add_order_note( 'Payment Created.', true );
@@ -791,20 +545,15 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             $order->add_order_note( 'Payment Expired.', true );
                         }
 
-                        $logger->info( wc_print_r( '$orderid'.$orderid, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-
-
-                        $logger->info( wc_print_r( 'Decode Body array ='.$DecodeBody, true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
                         wp_send_json(['success' => true], 200);
                     }
+                    $logger->info( wc_print_r( 'Callback out of order', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( 'Order Status = '.$order->get_status(), true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( 'CallBack Status = '.$JsonDecodeBody[0]['newStatus'], true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
+                    $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$orderid ) );
 
-
-
+                    wp_send_json(['success' => false, 'payload' => 'Wrong Order Status for this callback'], 400);
                 }
-
-
             }
 
 
@@ -829,270 +578,15 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     $refund_merchantReferenceId= substr($refund_merchantReferenceId,0,250);
                 }
 
-                // add to woocommerce log file the $refund_merchantReferenceId
-                $logger->info( wc_print_r( 'the refund Reference Id = '.$refund_merchantReferenceId, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-
                 // shop currency
                 $shop_currency =get_woocommerce_currency();
+                $countryEndPoint=$this->getJumiaPayUrl();
+                $shop_config_key=$this->getJumiaPayShopKey();
 
-                // add to woocommerce log file the refund shop currency
-                $logger->info( wc_print_r( 'the refund shop currency = '.$shop_currency, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
+                $refund_endpoint = $countryEndPoint.'/merchant/refund';
 
                 // get the merchantReferenceId with saved before in the database
                 $order_merchantReferenceId=get_post_meta( $order_id, '_merchantReferenceId',true );
-
-                if($this->environment=="Live"){
-                    // add to woocommerce log file the live environment
-                    $logger->info( wc_print_r( 'the environment ( live ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    switch ($this->country_code) {
-                        case "Egypt":
-                            $countryCode='EG';
-                            $refund_endpoint='https://api-pay.jumia.com.eg/merchant/refund';
-                            // add to woocommerce log file the country code ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( EG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( EG ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ghana":
-                            $countryCode='GH';
-                            $refund_endpoint='https://api-pay.jumia.com.gh/merchant/refund';
-
-                            // add to woocommerce log file the country code ( GH ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( GH ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( GH ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( GH ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ivory-Coast":
-                            $countryCode='CI';
-                            $refund_endpoint='https://api-pay.jumia.ci/merchant/refund';
-
-                            // add to woocommerce log file the country code ( EG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( CI ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( CI ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( CI ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Kenya":
-                            $countryCode='KE';
-                            $refund_endpoint='https://api-pay.jumia.co.ke/merchant/refund';
-
-                            // add to woocommerce log file the country code ( KE ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( KE ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( KE ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( KE ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Morocco":
-                            $countryCode='MA';
-                            $refund_endpoint='https://api-pay.jumia.ma/merchant/refund';
-
-                            // add to woocommerce log file the country code ( MA ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( MA ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( MA ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( MA ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Nigeria":
-                            $countryCode='NG';
-                            $refund_endpoint='https://api-pay.jumia.com.ng/merchant/refund';
-
-                            // add to woocommerce log file the country code ( NG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( NG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( NG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( NG ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Tunisia":
-                            $countryCode='TN';
-                            $refund_endpoint='https://api-pay.jumia.com.tn/merchant/refund';
-
-                            // add to woocommerce log file the country code ( TN ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( TN ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( TN ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( TN ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Uganda":
-                            $countryCode='UG';
-                            $refund_endpoint='https://api-pay.jumia.ug/merchant/refund';
-
-                            // add to woocommerce log file the country code ( UG ) ( Live )
-                            $logger->info( wc_print_r( 'the country code ( UG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( UG ) ( Live )
-                            $logger->info( wc_print_r( 'the country end point ( UG ) ( Live ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-
-                    }
-                    $shop_config_key=$this->shop_config_key;
-                    $api_key=$this->api_key;
-
-                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key )
-                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( live )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )
-                    $logger->info( wc_print_r( 'the the Merchant Api Key = $api_key ( my Merchant Api Key ) ( live )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                }
-                if($this->environment=="Sandbox"){
-                    // add to woocommerce log file the live environment
-                    $logger->info( wc_print_r( 'the environment ( Sandbox ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    switch ($this->sandbox_country_code) {
-                        case "Egypt":
-                            $countryCode='EG';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.com.eg/merchant/refund';
-                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( EG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( EG ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ghana":
-                            $countryCode='GH';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.com.gh/merchant/refund';
-
-                            // add to woocommerce log file the country code ( GH ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( GH ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( GH ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( GH ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Ivory-Coast":
-                            $countryCode='CI';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.ci/merchant/refund';
-
-                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( CI ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( CI ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( CI ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Kenya":
-                            $countryCode='KE';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.co.ke/merchant/refund';
-
-                            // add to woocommerce log file the country code ( KE ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( KE ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( KE ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( KE ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Morocco":
-                            $countryCode='MA';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.ma/merchant/refund';
-
-                            // add to woocommerce log file the country code ( MA ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( MA ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( MA ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( MA ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Nigeria":
-                            $countryCode='NG';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.com.ng/merchant/refund';
-
-                            // add to woocommerce log file the country code ( NG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( NG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( NG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( NG ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Tunisia":
-                            $countryCode='TN';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.com.tn/merchant/refund';
-
-                            // add to woocommerce log file the country code ( TN ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( TN ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( TN ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( TN ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-                        case "Uganda":
-                            $countryCode='UG';
-                            $refund_endpoint='https://api-sandbox-pay.jumia.ug/merchant/refund';
-
-                            // add to woocommerce log file the country code ( UG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country code ( UG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            // add to woocommerce log file the country end point ( UG ) ( sandbox )
-                            $logger->info( wc_print_r( 'the country end point ( UG ) ( sandbox ) = '.$refund_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            break;
-
-                    }
-                    $shop_config_key=$this->sandbox_shop_config_key;
-                    $api_key=$this->sandbox_api_key;
-
-                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )
-                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )( sandbox )
-                    $logger->info( wc_print_r( 'the Merchant Api Key = $api_key ( my Merchant Api Key ) ( sandbox )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                }
-
-
 
                 // the data array
                 $data = [
@@ -1104,30 +598,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     "referenceId"=> $refund_merchantReferenceId
                 ];
 
-                $data = wp_json_encode( $data );
-
-                // add to woocommerce log file the refund endpoint
-                $logger->info( wc_print_r( 'the refund data= '.$data, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                // the options array
-                $options = [
-                    'body'        => $data,
-                    'headers'     => [
-                        "apikey"=> $api_key,
-                        "Content-Type"=> "application/json",
-                    ],
-                    'timeout'     => 0,
-                    'redirection' => 5,
-                    'blocking'    => true,
-                    'httpversion' => '1.1',
-                    'sslverify'   => false,
-                    'data_format' => 'body',
-                ];
-
-                // start the api and get the response
-                $refund_response = wp_remote_post( $refund_endpoint, $options );
-
+                $refund_response = $this->makeRequest('post', $refund_endpoint, $data);
                 //check response for errors
                 if (!is_wp_error($refund_response)) {
 
@@ -1137,41 +608,25 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     if ($refund_body['success'] == 'true') {
 
                         // refund success
-                        $order->add_order_note( 'order refunded successfully', true );
-                        // add to woocommerce log file the refund endpoint
-                        $logger->info( wc_print_r( 'the refund success ', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                        $order->add_order_note( 'Order refunded via JumiaPay successfully', true );
 
                         return true;
-
-
                     }
                     else{
-
-                        // refund failed case bad request like 400 and so on
-                        $order->add_order_note( 'order refunded failed', true );
-
-                        // add to woocommerce log file the refund endpoint
-                        $logger->info( wc_print_r( 'the refund failed ', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
+                        $order->add_order_note("Order Refund via JumiaPay Failed - Reason: ".$refund_body['payload'][0]['description'], true);
                         return false;
-
-
                     }
 
                 }
                 else {
 
-                    // refund failed case connection error the api not trigger at all
-                    $order->add_order_note( 'order refunded failed case connection error pls try again later', true );
+                    $logger->info( wc_print_r( 'Error On Request Jpay Merchat Refund', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( 'Error Message = '.$refund_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $logger->info( wc_print_r( '====================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
-                    // add to woocommerce log file the refund endpoint
-                    $logger->info( wc_print_r( 'the refund failed the api not trigger at all', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $order->add_order_note("Order Refund via JumiaPay Failed - Reason: Connection Failed", true);
 
-                    return false;
-
+                    return;
                 }
             }
 
@@ -1186,644 +641,87 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 $order = wc_get_order( $order_id );
 
-                if($new_status=="cancelled"){
+                // We can only cancel an order if payment is not completed
+                if($new_status == 'cancelled'){
 
-                    if($this->environment=="Live"){
-                        // add to woocommerce log file the live environment
-                        $logger->info( wc_print_r( 'the environment ( live ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    $countryEndPoint=$this->getJumiaPayUrl();
+                    $shop_config_key=$this->getJumiaPayShopKey();
 
-                        switch ($this->country_code) {
-                            case "Egypt":
-                                $countryCode='EG';
-                                $verify_endpoint='https://api-pay.jumia.com.eg/merchant/transaction-events';
-                                // add to woocommerce log file the country code ( EG ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( EG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( EG ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( EG ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Ghana":
-                                $countryCode='GH';
-                                $verify_endpoint='https://api-pay.jumia.com.gh/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( GH ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( GH ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( GH ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( GH ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Ivory-Coast":
-                                $countryCode='CI';
-                                $verify_endpoint='https://api-pay.jumia.ci/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( EG ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( CI ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( CI ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( CI ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Kenya":
-                                $countryCode='KE';
-                                $verify_endpoint='https://api-pay.jumia.co.ke/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( KE ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( KE ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( KE ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( KE ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Morocco":
-                                $countryCode='MA';
-                                $verify_endpoint='https://api-pay.jumia.ma/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( MA ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( MA ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( MA ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( MA ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Nigeria":
-                                $countryCode='NG';
-                                $verify_endpoint='https://api-pay.jumia.com.ng/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( NG ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( NG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( NG ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( NG ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Tunisia":
-                                $countryCode='TN';
-                                $verify_endpoint='https://api-pay.jumia.com.tn/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( TN ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( TN ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( TN ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( TN ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Uganda":
-                                $countryCode='UG';
-                                $verify_endpoint='https://api-pay.jumia.ug/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( UG ) ( Live )
-                                $logger->info( wc_print_r( 'the country code ( UG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( UG ) ( Live )
-                                $logger->info( wc_print_r( 'the country end point ( UG ) ( Live ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-
-                        }
-                        $shop_config_key=$this->shop_config_key;
-                        $api_key=$this->api_key;
-
-                        // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key )
-                        $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( live )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )
-                        $logger->info( wc_print_r( 'the the Merchant Api Key = $api_key ( my Merchant Api Key ) ( live )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    }
-                    if($this->environment=="Sandbox"){
-                        // add to woocommerce log file the live environment
-                        $logger->info( wc_print_r( 'the environment ( Sandbox ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        switch ($this->sandbox_country_code) {
-                            case "Egypt":
-                                $countryCode='EG';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.com.eg/merchant/transaction-events';
-                                // add to woocommerce log file the country code ( EG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( EG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( EG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( EG ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Ghana":
-                                $countryCode='GH';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.com.gh/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( GH ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( GH ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( GH ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( GH ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Ivory-Coast":
-                                $countryCode='CI';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.ci/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( EG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( CI ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( CI ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( CI ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Kenya":
-                                $countryCode='KE';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.co.ke/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( KE ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( KE ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( KE ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( KE ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Morocco":
-                                $countryCode='MA';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.ma/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( MA ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( MA ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( MA ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( MA ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Nigeria":
-                                $countryCode='NG';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.com.ng/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( NG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( NG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( NG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( NG ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Tunisia":
-                                $countryCode='TN';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.com.tn/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( TN ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( TN ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( TN ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( TN ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-                            case "Uganda":
-                                $countryCode='UG';
-                                $verify_endpoint='https://api-sandbox-pay.jumia.ug/merchant/transaction-events';
-
-                                // add to woocommerce log file the country code ( UG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country code ( UG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                // add to woocommerce log file the country end point ( UG ) ( sandbox )
-                                $logger->info( wc_print_r( 'the country end point ( UG ) ( sandbox ) = '.$verify_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                break;
-
-                        }
-                        $shop_config_key=$this->sandbox_shop_config_key;
-                        $api_key=$this->sandbox_api_key;
-
-                        // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )
-                        $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )( sandbox )
-                        $logger->info( wc_print_r( 'the Merchant Api Key = $api_key ( my Merchant Api Key ) ( sandbox )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                    }
+                    $cancel_endpoint = $countryEndPoint.'/merchant/cancel';
 
                     $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
                     $data = [
                         "shopConfig" => $shop_config_key,
-                        "transactionId" => $order_merchantReferenceId,
-                        "transactionType" => "Purchase",
-
+                        "purchaseId" => $order_merchantReferenceId,
                     ];
 
-                    $data = wp_json_encode( $data );
+                    $cancel_response = $this->makeRequest('post', $cancel_endpoint, $data);
 
-                    // add to woocommerce log file the refund endpoint
-                    $logger->info( wc_print_r( 'the verify data= '.$data, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                    if (!is_wp_error($cancel_response)) {
 
-                    $options = [
-                        'body'        => $data,
-                        'headers'     => [
-                            "apikey"=> $api_key,
-                            "Content-Type"=> "application/json",
-                        ],
-                        'timeout'     => 0,
-                        'redirection' => 5,
-                        'blocking'    => true,
-                        'httpversion' => '1.1',
-                        'sslverify'   => false,
-                        'data_format' => 'body',
-                    ];
-                    $verify_response = wp_remote_post( $verify_endpoint, $options );
+                        $cancel_body = json_decode($cancel_response['body'], true);
 
-                    if (!is_wp_error($verify_response)) {
+                        if ($cancel_body['success'] == 'true') {
 
-                        $verify_body = json_decode($verify_response['body'], true);
-                        if ($verify_body['success'] == 'true') {
-
-                            // add to woocommerce log file the refund endpoint
-                            $logger->info( wc_print_r( 'the verify status = success', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            $purchase_status=$verify_body['payload'][0]['newStatus'];
-
-                            // add to woocommerce log file the refund endpoint
-                            $logger->info( wc_print_r( 'the verify purchase status = '.$purchase_status, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            if($purchase_status=="Created" || $purchase_status=="Confirmed" || $purchase_status=="Committed"){
-
-
-                                if($this->environment=="Live"){
-                                    // add to woocommerce log file the live environment
-                                    $logger->info( wc_print_r( 'the environment ( live ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                    switch ($this->country_code) {
-                                        case "Egypt":
-                                            $countryCode='EG';
-                                            $cancel_endpoint='https://api-pay.jumia.com.eg/merchant/cancel';
-                                            // add to woocommerce log file the country code ( EG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( EG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( EG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( EG ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Ghana":
-                                            $countryCode='GH';
-                                            $cancel_endpoint='https://api-pay.jumia.com.gh/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( GH ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( GH ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( GH ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( GH ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Ivory-Coast":
-                                            $countryCode='CI';
-                                            $cancel_endpoint='https://api-pay.jumia.ci/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( EG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( CI ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( CI ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( CI ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Kenya":
-                                            $countryCode='KE';
-                                            $cancel_endpoint='https://api-pay.jumia.co.ke/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( KE ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( KE ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( KE ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( KE ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Morocco":
-                                            $countryCode='MA';
-                                            $cancel_endpoint='https://api-pay.jumia.ma/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( MA ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( MA ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( MA ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( MA ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Nigeria":
-                                            $countryCode='NG';
-                                            $cancel_endpoint='https://api-pay.jumia.com.ng/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( NG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( NG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( NG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( NG ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Tunisia":
-                                            $countryCode='TN';
-                                            $cancel_endpoint='https://api-pay.jumia.com.tn/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( TN ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( TN ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( TN ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( TN ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Uganda":
-                                            $countryCode='UG';
-                                            $cancel_endpoint='https://api-pay.jumia.ug/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( UG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country code ( UG ) ( Live ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( UG ) ( Live )
-                                            $logger->info( wc_print_r( 'the country end point ( UG ) ( Live ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-
-                                    }
-                                    $shop_config_key=$this->shop_config_key;
-                                    $api_key=$this->api_key;
-
-                                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key )
-                                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( live )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )
-                                    $logger->info( wc_print_r( 'the the Merchant Api Key = $api_key ( my Merchant Api Key ) ( live )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                }
-                                if($this->environment=="Sandbox"){
-                                    // add to woocommerce log file the live environment
-                                    $logger->info( wc_print_r( 'the environment ( Sandbox ) = '.$this->environment, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                    switch ($this->sandbox_country_code) {
-                                        case "Egypt":
-                                            $countryCode='EG';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.com.eg/merchant/cancel';
-                                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( EG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( EG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( EG ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Ghana":
-                                            $countryCode='GH';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.com.gh/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( GH ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( GH ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( GH ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( GH ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Ivory-Coast":
-                                            $countryCode='CI';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.ci/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( EG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( CI ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( CI ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( CI ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Kenya":
-                                            $countryCode='KE';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.co.ke/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( KE ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( KE ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( KE ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( KE ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Morocco":
-                                            $countryCode='MA';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.ma/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( MA ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( MA ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( MA ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( MA ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Nigeria":
-                                            $countryCode='NG';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.com.ng/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( NG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( NG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( NG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( NG ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Tunisia":
-                                            $countryCode='TN';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.com.tn/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( TN ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( TN ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( TN ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( TN ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-                                        case "Uganda":
-                                            $countryCode='UG';
-                                            $cancel_endpoint='https://api-sandbox-pay.jumia.ug/merchant/cancel';
-
-                                            // add to woocommerce log file the country code ( UG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country code ( UG ) ( sandbox ) = '.$countryCode, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            // add to woocommerce log file the country end point ( UG ) ( sandbox )
-                                            $logger->info( wc_print_r( 'the country end point ( UG ) ( sandbox ) = '.$cancel_endpoint, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                            $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                            break;
-
-                                    }
-                                    $shop_config_key=$this->sandbox_shop_config_key;
-                                    $api_key=$this->sandbox_api_key;
-
-                                    // add to woocommerce log file the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )
-                                    $logger->info( wc_print_r( 'the Shop Api Key = $shop_config_key ( my Shop Api Key ) ( sandbox )  = '.$shop_config_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                    // add to woocommerce log file the Shop Api Key = $api_key ( my Merchant Api Key )( sandbox )
-                                    $logger->info( wc_print_r( 'the Merchant Api Key = $api_key ( my Merchant Api Key ) ( sandbox )  = '.$api_key, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                }
-
-
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the verify purchase status = '.$purchase_status, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
-                                $data = [
-                                    "shopConfig" => $this->shop_config_key,
-                                    "purchaseId" => $order_merchantReferenceId,
-                                ];
-
-                                $data = wp_json_encode( $data );
-
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the cancel data = '.$data, true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                $options = [
-                                    'body'        => $data,
-                                    'headers'     => [
-                                        "apikey"=> $this->api_key,
-                                        "Content-Type"=> "application/json",
-                                    ],
-                                    'timeout'     => 0,
-                                    'redirection' => 5,
-                                    'blocking'    => true,
-                                    'httpversion' => '1.1',
-                                    'sslverify'   => false,
-                                    'data_format' => 'body',
-                                ];
-
-
-                                $cancel_response = wp_remote_post( $cancel_endpoint, $options );
-                                if (!is_wp_error($cancel_response)) {
-                                    $cancel_body = json_decode($cancel_response['body'], true);
-                                    if ($cancel_body['success'] == 'true') {
-
-                                        if(!is_admin()){ wc_add_notice('Cancel complete', 'error');}
-                                        // add to woocommerce log file the refund endpoint
-                                        $logger->info( wc_print_r( 'the cancel status = success', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                        $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                    }
-
-                                }
-                                else{
-                                    if(!is_admin()){wc_add_notice('Connection Error', 'error');}
-                                    // add to woocommerce log file the refund endpoint
-                                    $logger->info( wc_print_r( 'the cancel status = Fail', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                    $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                                }
-
-                            }
-                            elseif($purchase_status=="Cancelled" || $purchase_status=="Expired"){
-                                if(!is_admin()){wc_add_notice('This order is already cancelled', 'error');}
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the cancel status = This order is already cancelled', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            }
-                            elseif($purchase_status=="Completed"){
-                                if(!is_admin()){ wc_add_notice('This order can not be canceled case the payment complete.', 'error');}
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the cancel status = This order can not be canceled case the payment complete.', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            }
-                            elseif($purchase_status=="Failed"){
-                                if(!is_admin()){wc_add_notice('This order can not be cancelled case it is failed in payment process.', 'error');}
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the cancel status = This order can not be cancelled case it is failed in payment process.', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            }
-                            else{
-                                if(!is_admin()){
-                                    wc_add_notice('Connection error.', 'error');}
-                                // add to woocommerce log file the refund endpoint
-                                $logger->info( wc_print_r( 'the cancel status = This order can not be cancelled case Connection error', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                                $logger->info( wc_print_r( '===========================================================================================================================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                            }
-
-                            return ;
+                            $order->add_order_note( 'JumiaPay Payment successfully cancelled', true );
+                            return true;
+                        } else {
+                            $order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
+                            return false;
                         }
-                        else{
-                            return ;
-
-                        }
-
                     }
+                    else{
+                        $logger->info( wc_print_r( 'Error On Request Jpay Merchat Cancel', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                        $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );                                $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
 
+                        $order->add_order_note("JumiaPay Payment cancellation failed - Reason: Connection Failed", true);
+                        return false;
+                    }
                 }
+            }
 
+
+            function customer_order_cancelled( $array, $order ){
+                $order_id=$order->get_id();
+
+                $logger = wc_get_logger();
+
+                if($order->get_status()!="cancelled"){
+                    $countryEndPoint=$this->getJumiaPayUrl();
+                    $shop_config_key=$this->getJumiaPayShopKey();
+
+                    $cancel_endpoint = $countryEndPoint.'/merchant/cancel';
+
+                    $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
+                    $data = [
+                        "shopConfig" => $shop_config_key,
+                        "purchaseId" => $order_merchantReferenceId,
+                    ];
+
+                    $cancel_response = $this->makeRequest('post', $cancel_endpoint, $data);
+
+                    if (!is_wp_error($cancel_response)) {
+
+                        $cancel_body = json_decode($cancel_response['body'], true);
+
+                        if ($cancel_body['success'] == 'true') {
+
+                            $order->add_order_note( 'JumiaPay Payment successfully cancelled', true );
+                            return $array;
+                        } else {
+                            $order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
+                            return $array;
+                        }
+                    }
+                    else{
+                        $logger->info( wc_print_r( 'Error On Request Jpay Merchat Cancel', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                        $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );                                $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+
+                        $order->add_order_note("JumiaPay Payment cancellation failed - Reason: Connection Failed", true);
+                        return $array;
+                    }
+                    return $array;
+                }
             }
         }
     }
@@ -1834,8 +732,4 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
     }
 
     add_filter( 'woocommerce_payment_gateways', 'add_jumiaPay_gateway_class' );
-
-
-
-
 }
