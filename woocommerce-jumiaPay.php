@@ -83,11 +83,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 //action hook for the payment return
                 add_action( 'woocommerce_api_payment_update', array( $this, 'payment_update' ) );
 
-                //action hook for the cancel the order
-                add_action( 'woocommerce_order_status_changed',array( $this, 'order_cancelled' ),10,3);
-
-                add_filter( 'woocommerce_valid_order_statuses_for_cancel', array( $this,'customer_order_cancelled'), 10, 2 );
-
             }
 
             //settings fields function
@@ -185,7 +180,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
             }
 
-            private function getJumiaPayUrl() {
+            public function getJumiaPayUrl() {
                 switch ($this->country_code) {
                     case "Egypt":
                         $tld='.jumia.com.ng';
@@ -222,7 +217,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 return '';
             }
 
-            private function getJumiaPayCountryCode() {
+            public function getJumiaPayCountryCode() {
                 switch ($this->country_code) {
                     case "Egypt":
                         $countryCode='EG';
@@ -253,7 +248,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 return $countryCode;
             }
 
-            private function getJumiaPayShopKey() {
+            public function getJumiaPayShopKey() {
                 if($this->environment=="Live"){
                     return $this->shop_config_key;
                 }
@@ -263,7 +258,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 }
             }
 
-            private function getJumiaPayApiKey() {
+            public function getJumiaPayApiKey() {
                 if($this->environment=="Live"){
                     return $this->api_key;
                 }
@@ -273,8 +268,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 }
             }
 
-
-            private function makeRequest($method, $url, $data=null) {
+            public function makeRequest($method, $url, $data=null) {
                 if ($data != null) {
                     $data = wp_json_encode( $data );
                 }
@@ -478,7 +472,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
             }
 
-
             /*
             * update the order payment status function
             * the return from the jumiapay gat way
@@ -497,6 +490,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                     wc_add_notice('Payment Cancelled.', 'error');
                     wp_safe_redirect(wc_get_page_permalink('cart'));
+                    $order->update_status('cancelled');
                 }
                 if($paymentStatus=='success'){
                     wp_safe_redirect($this->get_return_url( $order ));
@@ -533,15 +527,15 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             $order->add_order_note( 'Payment Completed.', true );
                         }
                         if($JsonDecodeBody[0]['newStatus']=="Failed"){
-                            $order->update_status('Cancelled');
+                            $order->update_status('cancelled');
                             $order->add_order_note( 'Payment Failed.', true );
                         }
-                        if($JsonDecodeBody[0]['newStatus']=="Cancelled"){
-                            $order->update_status('Cancelled');
+                        if($JsonDecodeBody[0]['newStatus']=="cancelled"){
+                            $order->update_status('cancelled');
                             $order->add_order_note( 'Payment Cancelled.', true );
                         }
                         if($JsonDecodeBody[0]['newStatus']=="Expired"){
-                            $order->update_status('Cancelled');
+                            $order->update_status('cancelled');
                             $order->add_order_note( 'Payment Expired.', true );
                         }
 
@@ -555,7 +549,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     wp_send_json(['success' => false, 'payload' => 'Wrong Order Status for this callback'], 400);
                 }
             }
-
 
             /*
             * refund function
@@ -630,7 +623,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 }
             }
 
-
             /*
             * cancel function
             * contain the cancel api
@@ -666,7 +658,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             $order->add_order_note( 'JumiaPay Payment successfully cancelled', true );
                             return true;
                         } else {
-                            $order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
+                            //$order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
                             return false;
                         }
                     }
@@ -680,49 +672,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                 }
             }
 
-
-            function customer_order_cancelled( $array, $order ){
-                $order_id=$order->get_id();
-
-                $logger = wc_get_logger();
-
-                if($order->get_status()!="cancelled"){
-                    $countryEndPoint=$this->getJumiaPayUrl();
-                    $shop_config_key=$this->getJumiaPayShopKey();
-
-                    $cancel_endpoint = $countryEndPoint.'/merchant/cancel';
-
-                    $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
-                    $data = [
-                        "shopConfig" => $shop_config_key,
-                        "purchaseId" => $order_merchantReferenceId,
-                    ];
-
-                    $cancel_response = $this->makeRequest('post', $cancel_endpoint, $data);
-
-                    if (!is_wp_error($cancel_response)) {
-
-                        $cancel_body = json_decode($cancel_response['body'], true);
-
-                        if ($cancel_body['success'] == 'true') {
-
-                            $order->add_order_note( 'JumiaPay Payment successfully cancelled', true );
-                            return $array;
-                        } else {
-                            $order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
-                            return $array;
-                        }
-                    }
-                    else{
-                        $logger->info( wc_print_r( 'Error On Request Jpay Merchat Cancel', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-                        $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );                                $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
-
-                        $order->add_order_note("JumiaPay Payment cancellation failed - Reason: Connection Failed", true);
-                        return $array;
-                    }
-                    return $array;
-                }
-            }
         }
     }
 
@@ -732,4 +681,51 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
     }
 
     add_filter( 'woocommerce_payment_gateways', 'add_jumiaPay_gateway_class' );
+    add_filter( 'woocommerce_order_status_changed', 'customer_order_cancelled', 10, 3);
+    function customer_order_cancelled( $order_id, $old_status, $new_status  ){
+        $agorder = new WC_Gateway_jumiaPay_Gateway();
+        $logger = wc_get_logger();
+
+        $order = wc_get_order( $order_id );
+        // $new_status=$order->get_status();
+        // We can only cancel an order if payment is not completed
+        if($new_status == 'cancelled'){
+
+            $countryEndPoint=$agorder->getJumiaPayUrl();
+            $shop_config_key=$agorder->getJumiaPayShopKey();
+
+            $cancel_endpoint = $countryEndPoint.'/merchant/cancel';
+
+            $order_merchantReferenceId=get_post_meta( $order_id, '_purchaseId',true );
+            $data = [
+                "shopConfig" => $shop_config_key,
+                "purchaseId" => $order_merchantReferenceId,
+            ];
+
+            $cancel_response = $agorder->makeRequest('post', $cancel_endpoint, $data);
+
+            if (!is_wp_error($cancel_response)) {
+
+                $cancel_body = json_decode($cancel_response['body'], true);
+
+                if ($cancel_body['success'] == 'true') {
+
+                    $order->add_order_note( 'JumiaPay Payment successfully cancelled', true );
+                    return true;
+                } else {
+                    $order->add_order_note("JumiaPay Payment cancellation failed - Reason: ".$cancel_body['payload'][0]['description'], true);
+                    return false;
+                }
+            }
+            else{
+                $logger->info( wc_print_r( 'Error On Request Jpay Merchat Cancel', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+                $logger->info( wc_print_r( 'Error Message = '.$cancel_response->get_error_message(), true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );                                $logger->info( wc_print_r( '==================================', true ), array( 'source' => 'jumiaPay log file -'.$order_id ) );
+
+                $order->add_order_note("JumiaPay Payment cancellation failed - Reason: Connection Failed", true);
+                return false;
+            }
+        }
+
+    }
+
 }
