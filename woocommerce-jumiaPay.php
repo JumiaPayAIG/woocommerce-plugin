@@ -129,7 +129,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         ),
                     ),
                     "shop_config_key"=> array(
-                        'title' => __( 'Shop Api Key', 'jumia-pay-woo'),
+                        'title' => __( 'Shop Key', 'jumia-pay-woo'),
                         'type' => 'textarea',
                         'default' => __( '', 'jumia-pay-woo'),
                     ),
@@ -161,7 +161,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         ),
                     ),
                     "sandbox_shop_config_key"=> array(
-                        'title' => __( 'Shop Api Key', 'jumia-pay-woo'),
+                        'title' => __( 'Shop Key', 'jumia-pay-woo'),
                         'type' => 'textarea',
                         'default' => __( '', 'jumia-pay-woo'),
                     ),
@@ -175,15 +175,23 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 );
                 $this->form_fields = apply_filters( 'woo_jumiaPay_fields', $pluginFields );
-
-
-
             }
 
+            public function getCountry() {
+                if($this->environment=="Live"){
+                    return $this->country_code;
+                }
+                if($this->environment=="Sandbox"){
+                    return $this->sandbox_country_code;
+                }
+                return '';
+            }
+
+
             public function getJumiaPayUrl() {
-                switch ($this->country_code) {
+                switch ($this->getCountry()) {
                     case "Egypt":
-                        $tld='.jumia.com.ng';
+                        $tld='.jumia.com.eg';
                         break;
                     case "Ghana":
                         $tld='.jumia.com.gh';
@@ -218,7 +226,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
             }
 
             public function getJumiaPayCountryCode() {
-                switch ($this->country_code) {
+                switch ($this->getCountry()) {
                     case "Egypt":
                         $countryCode='EG';
                         break;
@@ -487,10 +495,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
 
                 // RETURN URL HANDLE
                 if($paymentStatus=='failure'){
-
                     wc_add_notice('Payment Cancelled.', 'error');
                     wp_safe_redirect(wc_get_page_permalink('cart'));
-                    $order->update_status('cancelled');
                 }
                 if($paymentStatus=='success'){
                     wp_safe_redirect($this->get_return_url( $order ));
@@ -527,7 +533,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             $order->add_order_note( 'Payment Completed.', true );
                         }
                         if($JsonDecodeBody[0]['newStatus']=="Failed"){
-                            $order->update_status('cancelled');
                             $order->add_order_note( 'Payment Failed.', true );
                         }
                         if($JsonDecodeBody[0]['newStatus']=="cancelled"){
@@ -535,7 +540,6 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                             $order->add_order_note( 'Payment Cancelled.', true );
                         }
                         if($JsonDecodeBody[0]['newStatus']=="Expired"){
-                            $order->update_status('cancelled');
                             $order->add_order_note( 'Payment Expired.', true );
                         }
 
