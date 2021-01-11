@@ -119,13 +119,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         'default' => __( 'Cheque Payment', 'woocommerce' ),
                         'options' => array(
                             'Egypt' => 'Egypt',
-                            'Ghana' => 'Ghana',
-                            'Ivory-Coast' => 'Ivory Coast',
-                            'Kenya' => 'Kenya',
-                            'Morocco' => 'Morocco',
                             'Nigeria' => 'Nigeria',
-                            'Tunisia' => 'Tunisia',
-                            'Uganda' => 'Uganda',
                         ),
                     ),
                     "shop_config_key"=> array(
@@ -151,13 +145,7 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                         'default' => __( 'Cheque Payment', 'woocommerce' ),
                         'options' => array(
                             'Egypt' => 'Egypt',
-                            'Ghana' => 'Ghana',
-                            'Ivory-Coast' => 'Ivory Coast',
-                            'Kenya' => 'Kenya',
-                            'Morocco' => 'Morocco',
                             'Nigeria' => 'Nigeria',
-                            'Tunisia' => 'Tunisia',
-                            'Uganda' => 'Uganda',
                         ),
                     ),
                     "sandbox_shop_config_key"=> array(
@@ -193,26 +181,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     case "Egypt":
                         $tld='.jumia.com.eg';
                         break;
-                    case "Ghana":
-                        $tld='.jumia.com.gh';
-                        break;
-                    case "Ivory-Coast":
-                        $tld='.jumia.ci';
-                        break;
-                    case "Kenya":
-                        $tld='.jumia.co.ke';
-                        break;
-                    case "Morocco":
-                        $tld='.jumia.ma';
-                        break;
                     case "Nigeria":
                         $tld='.jumia.com.ng';
-                        break;
-                    case "Tunisia":
-                        $tld='.jumia.com.tn';
-                        break;
-                    case "Uganda":
-                        $tld='.jumia.ug';
                         break;
                 }
 
@@ -230,26 +200,8 @@ if ( !class_exists( 'jumiaPayPlugin' ) ) {
                     case "Egypt":
                         $countryCode='EG';
                         break;
-                    case "Ghana":
-                        $countryCode='GH';
-                        break;
-                    case "Ivory-Coast":
-                        $countryCode='CI';
-                        break;
-                    case "Kenya":
-                        $countryCode='KE';
-                        break;
-                    case "Morocco":
-                        $countryCode='MA';
-                        break;
                     case "Nigeria":
                         $countryCode='NG';
-                        break;
-                    case "Tunisia":
-                        $countryCode='TN';
-                        break;
-                    case "Uganda":
-                        $countryCode='UG';
                         break;
                 }
 
