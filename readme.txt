@@ -87,13 +87,13 @@ Once your customer completes the payment, he will be redirected to your website.
 
 Yes. JumiaPay has a sandbox available so you can test the plugin integration and monitor fictitious transactions.
 
-For more information, check out our [documentation](https://business-staging-pay.jumia.com.ng/integration-guides#step-4-get-your-sandbox-account-information).
+For more information, check out our documentation.
 
-To configure and use the sandbox, please follow the instructions provided on the Installation Guide or [here](https://business-staging-pay.jumia.com.ng/integration-guides#wordpress). You may choose to connect in ‘Live’ or ‘Sandbox’ mode and switch between these modes whenever you want.
+To configure and use the sandbox, please follow the instructions provided on the Installation Guide. You may choose to connect in ‘Live’ or ‘Sandbox’ mode and switch between these modes whenever you want.
 
 = Where can I find documentation on JumiaPay? =
 
-You may find our documentation [here](https://business-staging-pay.jumia.com.ng/integration-guides#wordpress) with detailed steps on how to install and configure the JumiaPay WooCommerce Payment Gateway and on how to monitor and take actions over your received payments.
+You may find our documentation with detailed steps on how to install and configure the JumiaPay WooCommerce Payment Gateway and on how to monitor and take actions over your received payments.
 
 = Which payment methods does JumiaPay offer? =
 
@@ -101,7 +101,7 @@ JumiaPay WooCommerce Payment Gateway enables you to accept payments in Nigeria, 
 
 = Can I refund a customer via JumiaPay? =
 
-Yes. Check our [documentation](https://business-staging-pay.jumia.com.ng/integration-guides#wordpress) for detailed information.
+Yes. Check our documentation for detailed information.
 
 = In which countries is JumiaPay WooCommerce Payment Gateway available? =
 
