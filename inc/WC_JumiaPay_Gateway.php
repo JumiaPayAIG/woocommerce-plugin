@@ -25,7 +25,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
 
         //plugin main settings for the admin and check out page
         $this->id   = 'jumia-pay';
-        $this->icon = apply_filters( 'woocommerce_jumiaPay_icon', plugins_url('/assets/image/Jumia-pay-logo-vertival.svg', __FILE__ ) );
+        $this->icon = apply_filters( 'woocommerce_jumiaPay_icon', plugins_url('/assets/image/Jumia-pay-logo-vertival.svg', dirname( __FILE__ ) ) );
         $this->has_fields = true;
 
         $this->method_title = 'JumiaPay';
