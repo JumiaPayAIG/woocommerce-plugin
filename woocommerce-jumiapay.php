@@ -6,8 +6,8 @@
  * Author URI: http://www.pharaohsoft.com/
  * Description: This plugin allows for local content payment systems.
  * Version: 1.0.0
- * License: GPLv2 or later
- * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
+ * Licence: Apache-2.0 License
+ * Licence URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
  * text-domain: woocommerce-jumiaPay
  */
 
