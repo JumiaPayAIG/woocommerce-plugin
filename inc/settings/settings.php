@@ -6,14 +6,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $pluginFields=array(
     'enabled' => array(
-        'title' => 'Enable/Disable',
+        'title' => esc_html('Enable/Disable'),
         'type' => 'checkbox',
-        'label' => 'Enable or Disable JumiaPay',
+        'label' => esc_html('Enable or Disable JumiaPay'),
         'default' => 'no',
 
     ),
     "environment"=> array(
-        'title' => 'Environment',
+        'title' => esc_html('Environment'),
         'type' => 'select',
         'default' => '',
         'desc_tip' => true,
@@ -23,15 +23,15 @@ $pluginFields=array(
         ),
     ),
     "live_title"=> array(
-        'title' => esc_html__( 'Live Settings', 'jumia-pay-woo' ),
+        'title' => esc_html('Live Settings'),
         'type'  => 'title',
     ),
     "country_list"=> array(
-        'title' => 'Country List',
+        'title' => esc_html('Country List'),
         'type' => 'select',
         'default' => '',
         'desc_tip' => true,
-        'description' => 'Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.',
+        'description' => esc_html('Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.'),
         'default' => '',
         'options' => array(
             'EG' => 'Egypt',
@@ -39,25 +39,25 @@ $pluginFields=array(
         ),
     ),
     "shop_config_key"=> array(
-        'title' => 'Shop Key',
+        'title' => esc_html('Shop Key'),
         'type' => 'textarea',
         'default' => '',
     ),
     "api_key"=> array(
-        'title' => 'Merchant Api Key',
+        'title' => esc_html('Merchant Api Key'),
         'type' => 'textarea',
         'default' => '',
     ),
     "sandbox_title"=> array(
-        'title' => esc_html__( 'Sandbox Settings', 'jumia-pay-woo' ),
+        'title' => esc_html('Sandbox Settings'),
         'type'  => 'title',
     ),
     "sandbox_country_list"=> array(
-        'title' => 'Country List',
+        'title' =>  esc_html('Country List'),
         'type' => 'select',
         'default' => '',
         'desc_tip' => true,
-        'description' => 'Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.',
+        'description' => esc_html('Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.'),
         'default' => '',
         'options' => array(
             'EG' => 'Egypt',
@@ -65,12 +65,12 @@ $pluginFields=array(
         ),
     ),
     "sandbox_shop_config_key"=> array(
-        'title' => 'Shop Key',
+        'title' => esc_html('Shop Key'),
         'type' => 'textarea',
         'default' => '',
     ),
     "sandbox_api_key"=> array(
-        'title' => 'Merchant Api Key',
+        'title' => esc_html('Merchant Api Key'),
         'type' => 'textarea',
         'default' => '',
     ),

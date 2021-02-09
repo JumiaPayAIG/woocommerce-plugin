@@ -48,7 +48,7 @@ class WC_JumiaPay_Purchase {
             $merchantReferenceId= substr($merchantReferenceId,0,255);
         }
 
-        return $merchantReferenceId;
+        return sanitize_text_field($merchantReferenceId);
     }
 
     private function getBasket() {
@@ -68,12 +68,12 @@ class WC_JumiaPay_Purchase {
                 $featured_img_url="";
             }
             $basketItem=[
-                "name"=> $item->get_name(),
-                "imageUrl"=>$featured_img_url ,
-                "amount"=> $item->get_subtotal(),
-                "quantity"=> $item->get_quantity(),
-                "discount"=>"",
-                "currency"=> $this->currency
+                "name"=> sanitize_text_field($item->get_name()),
+                "imageUrl"=>  esc_url_raw($featured_img_url),
+                "amount"=> sanitize_text_field($item->get_subtotal()),
+                "quantity"=> sanitize_text_field($item->get_quantity()),
+                "discount"=> "",
+                "currency"=> sanitize_text_field($this->currency))
             ];
             array_push($basketItems,$basketItem);
 
@@ -87,52 +87,52 @@ class WC_JumiaPay_Purchase {
         return [
             "shopConfig" => $this->shopConfig,
             "basket"=> [
-                "shipping"=>$this->order->get_shipping_tax(),
+                "shipping"=>sanitize_text_field($this->order->get_shipping_tax()),
                 "currency"=>$this->currency,
                 "basketItems"=>$this->getBasket(),
-                "totalAmount"=> $this->order->get_total(),
-                "discount"=>$this->order->get_discount_total(),
+                "totalAmount"=> sanitize_text_field($this->order->get_total()),
+                "discount"=>sanitize_text_field($this->order->get_discount_total()),
             ],
             "consumerData"=> [
-                "emailAddress"=> $this->order->get_billing_email(),
-                "mobilePhoneNumber"=> $this->order->get_billing_phone(),
-                "country"=> $this->countryCode,
-                "firstName"=> $this->order->get_billing_first_name(),
-                "lastName"=> $this->order->get_billing_last_name(),
-                "ipAddress"=> $this->order->get_customer_ip_address(),
+                "emailAddress"=> sanitize_email($this->order->get_billing_email()),
+                "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone()),
+                "country"=> sanitize_text_field($this->countryCode),
+                "firstName"=> sanitize_text_field($this->order->get_billing_first_name()),
+                "lastName"=> sanitize_text_field($this->order->get_billing_last_name()),
+                "ipAddress"=> sanitize_text_field($this->order->get_customer_ip_address()),
                 "dateOfBirth"=> "",
                 "language"=> $this->language,
-                "name"=> $this->order->get_billing_first_name()." ".$this->order->get_billing_last_name()
+                "name"=> sanitize_text_field($this->order->get_billing_first_name()." ".$this->order->get_billing_last_name())
             ],
             "priceCurrency"=> $this->currency,
-            "priceAmount"=> $this->order->get_total(),
-            "purchaseReturnUrl"=>  $this->baseUrl."/wc-api/payment_return/?orderid=".$this->order->get_id(),
-            "purchaseCallbackUrl"=>  $this->baseUrl."/wc-api/payment_callback/?orderid=".$this->order->get_id(),
+            "priceAmount"=> sanitize_text_field($this->order->get_total()),
+            "purchaseReturnUrl"=>  esc_url_raw($this->baseUrl."/wc-api/payment_return/?orderid=".$this->order->get_id()),
+            "purchaseCallbackUrl"=> esc_url_raw($this->baseUrl."/wc-api/payment_callback/?orderid=".$this->order->get_id()),
             "shippingAddress"=> [
-                "addressLine1"=> $this->order->get_shipping_address_1(),
-                "addressLine2"=> $this->order->get_shipping_address_2(),
-                "city"=> $this->order->get_shipping_city(),
-                "district"=> $this->order->get_shipping_state(),
-                "province"=> $this->order->get_shipping_state(),
-                "zip"=> $this->order->get_shipping_postcode(),
-                "country"=> $this->order->get_shipping_country(),
-                "name"=> $this->order->get_shipping_first_name()." ".$this->order->get_shipping_last_name(),
-                "firstName"=> $this->order->get_shipping_first_name(),
-                "lastName"=> $this->order->get_shipping_last_name(),
-                "mobilePhoneNumber"=> $this->order->get_billing_phone()
+                "addressLine1"=> sanitize_text_field($this->order->get_shipping_address_1()),
+                "addressLine2"=> sanitize_text_field($this->order->get_shipping_address_2()),
+                "city"=> sanitize_text_field($this->order->get_shipping_city()),
+                "district"=> sanitize_text_field($this->order->get_shipping_state()),
+                "province"=> sanitize_text_field($this->order->get_shipping_state()),
+                "zip"=> sanitize_text_field($this->order->get_shipping_postcode()),
+                "country"=> sanitize_text_field($this->order->get_shipping_country()),
+                "name"=> sanitize_text_field($this->order->get_shipping_first_name()." ".$this->order->get_shipping_last_name()),
+                "firstName"=> sanitize_text_field($this->order->get_shipping_first_name()),
+                "lastName"=> sanitize_text_field($this->order->get_shipping_last_name()),
+                "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ],
             "billingAddress"=> [
-                "addressLine1"=> $this->order->get_billing_address_1(),
-                "addressLine2"=> $this->order->get_billing_address_2(),
-                "city"=> $this->order->get_billing_city(),
-                "district"=> $this->order->get_billing_state(),
-                "province"=> $this->order->get_billing_state(),
-                "zip"=> $this->order->get_billing_postcode(),
-                "country"=> $this->order->get_billing_country(),
-                "name"=> $this->order->get_billing_first_name()." ".$this->order->get_billing_last_name(),
-                "firstName"=> $this->order->get_billing_first_name(),
-                "lastName"=> $this->order->get_billing_last_name(),
-                "mobilePhoneNumber"=> $this->order->get_billing_phone()
+                "addressLine1"=> sanitize_text_field($this->order->get_billing_address_1()),
+                "addressLine2"=> sanitize_text_field($this->order->get_billing_address_2()),
+                "city"=> sanitize_text_field($this->order->get_billing_city()),
+                "district"=> sanitize_text_field($this->order->get_billing_state()),
+                "province"=> sanitize_text_field($this->order->get_billing_state()),
+                "zip"=> sanitize_text_field($this->order->get_billing_postcode()),
+                "country"=> sanitize_text_field($this->order->get_billing_country()),
+                "name"=> sanitize_text_field($this->order->get_billing_first_name()." ".$this->order->get_billing_last_name()),
+                "firstName"=> sanitize_text_field($this->order->get_billing_first_name()),
+                "lastName"=> sanitize_text_field($this->order->get_billing_last_name()),
+                "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ],
             "merchantReferenceId"=> $this->generateMerchantReference()
         ];

@@ -1,3 +1,11 @@
+=== JumiaPay For Woocommerce - Payment Gateway ===
+Tags: payment request, jumiapay, woocommerce, payment gateway
+Requires at least: 5.1
+Tested up to: 5.2
+Stable tag: 1.2.0
+License: Apache-2.0 License
+License URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
+
 This is a JumiaPay payment gateway for WooCommerce.
 JumiaPay WooCommerce payment gateway enables you to accept payments in Nigeria and Egypt.
 

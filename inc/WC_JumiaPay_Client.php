@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once JPAY_DIR . 'inc/validators/WC_JumiaPay_Validators.php';
+
 class WC_JumiaPay_Client {
 
     /*
@@ -47,13 +49,13 @@ class WC_JumiaPay_Client {
         $sandboxShopConfig,
         $sandboxApiKey
     ) {
-        $this->environment=$env;
+        $this->environment= WC_JumiaPay_Validator::ValidateEnvironment($env);
 
-        $this->countryCode = $countryCode;
+        $this->countryCode = WC_JumiaPay_Validator::ValidateCountryCode($countryCode);
         $this->shopConfig = $shopConfig;
         $this->apiKey = $apikey;
 
-        $this->sandboxCountryCode = $sandboxCountryCode;
+        $this->sandboxCountryCode = WC_JumiaPay_Validator::ValidateCountryCode($sandboxCountryCode);
         $this->sandboxShopConfig=$sandboxShopConfig;
         $this->sandboxApiKey=$sandboxApiKey;
     }

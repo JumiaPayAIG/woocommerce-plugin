@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: woocommerce jumiaPay
+ * Plugin Name: JumiaPay For Woocommerce - Payment Gateway
  * Plugin URI: https://github.com/JumiaPayAIG/woocommerce-plugin
  * Author Name: Pharaoh Soft
  * Author URI: http://www.pharaohsoft.com/
- * Description: This plugin allows for local content payment systems.
- * Version: 1.0.0
+ * Description: his plugin allows for local content payment systems
+ * Version: 1.2.0
  * Licence: Apache-2.0 License
  * Licence URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
  * text-domain: woocommerce-jumiaPay
