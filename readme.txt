@@ -1,4 +1,5 @@
 === JumiaPay For Woocommerce - Payment Gateway ===
+Contributors: jpaywebshop
 Tags: payment request, jumiapay, woocommerce, payment gateway
 Requires at least: 5.3
 Tested up to: 5.6
