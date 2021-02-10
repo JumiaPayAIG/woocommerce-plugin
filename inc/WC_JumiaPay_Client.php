@@ -52,12 +52,12 @@ class WC_JumiaPay_Client {
         $this->environment= WC_JumiaPay_Validator::ValidateEnvironment($env);
 
         $this->countryCode = WC_JumiaPay_Validator::ValidateCountryCode($countryCode);
-        $this->shopConfig = $shopConfig;
-        $this->apiKey = $apikey;
+        $this->shopConfig = sanitize_text_field($shopConfig);
+        $this->apiKey = sanitize_text_field($apikey);
 
         $this->sandboxCountryCode = WC_JumiaPay_Validator::ValidateCountryCode($sandboxCountryCode);
-        $this->sandboxShopConfig=$sandboxShopConfig;
-        $this->sandboxApiKey=$sandboxApiKey;
+        $this->sandboxShopConfig=sanitize_text_field($sandboxShopConfig);
+        $this->sandboxApiKey=sanitize_text_field($sandboxApiKey);
     }
 
     /**

@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/JumiaPayAIG/woocommerce-plugin
  * Author Name: Pharaoh Soft
  * Author URI: http://www.pharaohsoft.com/
- * Description: his plugin allows for local content payment systems
+ * Description: JumiaPay payment gateway for WooCommerce
  * Version: 1.2.0
  * Licence: Apache-2.0 License
  * Licence URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE

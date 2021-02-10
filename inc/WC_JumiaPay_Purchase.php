@@ -73,7 +73,7 @@ class WC_JumiaPay_Purchase {
                 "amount"=> sanitize_text_field($item->get_subtotal()),
                 "quantity"=> sanitize_text_field($item->get_quantity()),
                 "discount"=> "",
-                "currency"=> sanitize_text_field($this->currency))
+                "currency"=> sanitize_text_field($this->currency)
             ];
             array_push($basketItems,$basketItem);
 

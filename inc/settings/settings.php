@@ -18,8 +18,8 @@ $pluginFields=array(
         'default' => '',
         'desc_tip' => true,
         'options' => array(
-            'Live' => 'Live',
-            'Sandbox' => 'Sandbox',
+            'Live' => esc_html('Live'),
+            'Sandbox' => esc_html('Sandbox'),
         ),
     ),
     "live_title"=> array(
@@ -34,8 +34,8 @@ $pluginFields=array(
         'description' => esc_html('Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.'),
         'default' => '',
         'options' => array(
-            'EG' => 'Egypt',
-            'NG' => 'Nigeria',
+            'EG' => esc_html('Egypt'),
+            'NG' => esc_html('Nigeria'),
         ),
     ),
     "shop_config_key"=> array(
@@ -60,8 +60,8 @@ $pluginFields=array(
         'description' => esc_html('Note that the currency of your WooCommerce store, under "General settings", must be the one used on the country you are operating and selecting here.'),
         'default' => '',
         'options' => array(
-            'EG' => 'Egypt',
-            'NG' => 'Nigeria',
+            'EG' => esc_html('Egypt'),
+            'NG' => esc_html('Nigeria'),
         ),
     ),
     "sandbox_shop_config_key"=> array(
