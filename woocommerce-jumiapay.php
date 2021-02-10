@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: JumiaPay For Woocommerce Gateway
+ * Plugin Name: JumiaPay For Woocommerce
  * Plugin URI: https://github.com/JumiaPayAIG/woocommerce-plugin
  * Author Name: Pharaoh Soft
  * Author URI: http://www.pharaohsoft.com/
