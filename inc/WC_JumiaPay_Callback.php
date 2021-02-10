@@ -1,6 +1,6 @@
 <?php
 /**
- * Cart handler.
+ * Callback handler.
  */
 if ( ! defined( 'ABSPATH' ) ) {
     exit;

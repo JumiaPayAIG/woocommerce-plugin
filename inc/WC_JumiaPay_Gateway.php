@@ -11,6 +11,7 @@ require_once JPAY_DIR . 'inc/WC_JumiaPay_Callback.php';
 require_once JPAY_DIR . 'inc/WC_JumiaPay_Client.php';
 require_once JPAY_DIR . 'inc/WC_JumiaPay_Purchase.php';
 require_once JPAY_DIR . 'inc/WC_JumiaPay_Refund.php';
+require_once JPAY_DIR . 'inc/validators/WC_JumiaPay_Validators.php';
 
 class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
 
@@ -28,11 +29,11 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
         $this->icon = apply_filters( 'woocommerce_jumiaPay_icon', plugins_url('/assets/image/Jumia-pay-logo-vertival.svg', dirname( __FILE__ ) ) );
         $this->has_fields = true;
 
-        $this->method_title = 'JumiaPay';
-        $this->method_description = 'JumiaPay payment gateway for WooCommerce';
+        $this->method_title =  esc_html('JumiaPay');
+        $this->method_description = esc_html('JumiaPay for WooCommerce - Payment Gateway');
 
-        $this->title = 'JumiaPay';
-        $this->description = 'Pay with your JumiaPay account and your preferred payment options';
+        $this->title = esc_html('JumiaPay');
+        $this->description = esc_html('Pay with your JumiaPay account and your preferred payment options');
         $this->instructions = $this->get_option( 'instructions', $this->description );
 
         $JpayClient = new WC_JumiaPay_Client(
@@ -91,8 +92,8 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
     public function payment_callback() {
         if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
-            $orderId= isset($_GET['orderid']) ? $_GET['orderid'] : '';
-            if ($orderId == '') {
+            $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
+            if ($orderId == '' || $orderId == false || $orderId == null) {
               return;
             }
 
@@ -100,6 +101,11 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
             $DecodeBody=urldecode($body);
             parse_str($DecodeBody,$bodyArray);
             $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
+
+            if (!isset($JsonDecodeBody[0]['newStatus'])) {
+                wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
+                return;
+            }
 
             $callbackHandler = new WC_JumiaPay_Callback(wc_get_order($orderId));
             $success = $callbackHandler->handle($JsonDecodeBody[0]['newStatus']);
@@ -115,13 +121,20 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
 
     public function payment_return() {
 
-        $orderId= isset($_GET['orderid']) ? $_GET['orderid'] : '';
-        if ($orderId == '') {
+        $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
+        if ($orderId == '' || $orderId == false || $orderId == null) {
             return;
         }
 
-        $paymentStatus= isset($_GET['paymentStatus']) ? $_GET['paymentStatus'] : '';
+        $paymentStatus = WC_JumiaPay_Validator::ValidatePaymentStatus(filter_input(INPUT_GET, 'paymentStatus', FILTER_SANITIZE_ENCODED));
         $order = wc_get_order($orderId);
+
+        if ($paymentStatus == '' || $paymentStatus == false || $paymentStatus == null) {
+            wc_add_notice('Payment Failed', 'error');
+            if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
+              exit;
+            }
+        }
 
         if($paymentStatus=='failure'){
             wc_add_notice('Payment Cancelled', 'error');
