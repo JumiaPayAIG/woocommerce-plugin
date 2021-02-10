@@ -129,6 +129,13 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
         $paymentStatus = WC_JumiaPay_Validator::ValidatePaymentStatus(filter_input(INPUT_GET, 'paymentStatus', FILTER_SANITIZE_ENCODED));
         $order = wc_get_order($orderId);
 
+        if ($paymentStatus == '' || $paymentStatus == false || $paymentStatus == null) {
+            wc_add_notice('Payment Failed', 'error');
+            if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
+              exit;
+            }
+        }
+
         if($paymentStatus=='failure'){
             wc_add_notice('Payment Cancelled', 'error');
             if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
