@@ -158,7 +158,7 @@ class WC_JumiaPay_Client {
      * @return string
      */
     private function getApiKey() {
-        return $this->isLiveEnv() ? $this->apikey : $this->sandboxApiKey;
+        return $this->isLiveEnv() ? $this->apiKey : $this->sandboxApiKey;
     }
 
     /**
