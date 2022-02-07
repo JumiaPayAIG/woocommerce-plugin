@@ -175,13 +175,38 @@ class WC_JumiaPay_Client {
         $tld = '';
 
         switch ($this->getCountryCode()) {
-        case "EG":
-            $tld='.jumia.com.eg';
-            break;
-        case "NG":
-            $tld='.jumia.com.ng';
-            break;
-        }
+            case "EG":
+                $tld='.jumia.com.eg';
+                break;
+            case "NG":
+                $tld='.jumia.com.ng';
+                break;
+            case "KE":
+                $tld='.jumia.co.ke';
+                break; 
+            case "MA":
+                $tld='.jumia.ma';
+                break;    
+            case "CI":
+                $tld='.jumia.ci';
+                break;
+            case "TN":
+                $tld='.jumia.tn';
+                break;
+            case "GH":
+                $tld='.jumia.com.gh';
+                break;
+            case "UG":
+                $tld='.jumia.ug';
+                break;  
+            case "DZ":
+                $tld='.jumia.dz';
+                break;  
+            case "SN":
+                $tld='.jumia.sn';
+                break;       
+            }
+    
 
         return $tld;
     }
