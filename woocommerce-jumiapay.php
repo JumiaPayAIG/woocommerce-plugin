@@ -5,7 +5,7 @@
  * Author Name: Pharaoh Soft
  * Author URI: http://www.pharaohsoft.com/
  * Description: JumiaPay payment gateway for WooCommerce
- * Version: 1.3.0
+ * Version: 1.4.0
  * Licence: Apache-2.0 License
  * Licence URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
  */
