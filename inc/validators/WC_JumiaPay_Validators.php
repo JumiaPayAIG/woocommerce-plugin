@@ -14,7 +14,7 @@ class WC_JumiaPay_Validator {
         }
 
         public static function ValidateCountryCode($countryCode) {
-                $validCountryCode = ['NG', 'EG'];
+                $validCountryCode = ["NG", "EG", "KE", "CI", "MA", "TN","UG", "GH", "DZ", "SN"];
                 return in_array($countryCode, $validCountryCode) ? $countryCode : "";
         }
 

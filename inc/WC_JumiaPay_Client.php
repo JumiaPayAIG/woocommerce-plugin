@@ -191,7 +191,7 @@ class WC_JumiaPay_Client {
                 $tld='.jumia.ci';
                 break;
             case "TN":
-                $tld='.jumia.tn';
+                $tld='.jumia.com.tn';
                 break;
             case "GH":
                 $tld='.jumia.com.gh';
@@ -207,7 +207,6 @@ class WC_JumiaPay_Client {
                 break;       
             }
     
-
         return $tld;
     }
 
