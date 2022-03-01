@@ -7,8 +7,11 @@ You can use the provide `docker-compose` file to launch an wordpress instance.
 docker-compose up -d
 ```
 
-After that you must first install the wooCommerce plugin manually:
+Your wordpress instance should now be reachable on http://localhost:8000.
 
+Access the URL and proceed to create your Wordpress admin account.
+
+After that you must first install the wooCommerce plugin manually
 
 ### Step 1 - Install a storefront theme
 
