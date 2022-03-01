@@ -41,14 +41,19 @@ class WC_JumiaPay_Client {
      */
     public $sandboxApiKey;
 
+    /** @var string */
+    public $pluginVersion;
+
     public function __construct($env,
         $countryCode,
         $shopConfig,
         $apikey,
         $sandboxCountryCode,
         $sandboxShopConfig,
-        $sandboxApiKey
+        $sandboxApiKey,
+        $pluginVersion
     ) {
+        $this->pluginVersion = $pluginVersion;
         $this->environment= WC_JumiaPay_Validator::ValidateEnvironment($env);
 
         $this->countryCode = WC_JumiaPay_Validator::ValidateCountryCode($countryCode);
@@ -58,6 +63,7 @@ class WC_JumiaPay_Client {
         $this->sandboxCountryCode = WC_JumiaPay_Validator::ValidateCountryCode($sandboxCountryCode);
         $this->sandboxShopConfig=sanitize_text_field($sandboxShopConfig);
         $this->sandboxApiKey=sanitize_text_field($sandboxApiKey);
+    
     }
 
     /**
@@ -195,6 +201,14 @@ class WC_JumiaPay_Client {
             'https://api-staging-pay'.$this->getTld();
     }
 
+
+    /**
+     * @return string
+     */
+    private function getUserAgent() {
+        return "jpay-woocommerce-plugin/" . $this->pluginVersion;
+    }
+
     /**
      * @param string $method
      * @param string $url
@@ -213,6 +227,7 @@ class WC_JumiaPay_Client {
             'headers'     => [
                 "apikey"=> $this->getApiKey(),
                 "Content-Type"=> "application/json",
+                "User-Agent" => $this->getUserAgent()
             ],
             'timeout'     => 60,
             'redirection' => 5,
