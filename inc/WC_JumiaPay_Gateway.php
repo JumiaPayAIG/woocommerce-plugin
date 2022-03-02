@@ -23,7 +23,6 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
      * main (variablues , methods , functions, settings in the admin , web hook)
      */
     public function __construct() {
-
         //plugin main settings for the admin and check out page
         $this->id   = 'jumia-pay';
         $this->icon = apply_filters( 'woocommerce_jumiaPay_icon', plugins_url('/assets/image/Jumia-pay-logo-vertival.svg', dirname( __FILE__ ) ) );
@@ -44,6 +43,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
             $this->get_option('sandbox_country_list'),
             $this->get_option('sandbox_shop_config_key'),
             $this->get_option('sandbox_api_key'),
+            JPAY_PLUGIN_VERSION, // global variable setted in woocommerce-jumiapay.php. 
         );
 
         $this->JpayClient = $JpayClient;

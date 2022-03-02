@@ -5,7 +5,7 @@
  * Author Name: Pharaoh Soft
  * Author URI: http://www.pharaohsoft.com/
  * Description: JumiaPay payment gateway for WooCommerce
- * Version: 1.4.0
+ * Version: 1.5.0
  * Licence: Apache-2.0 License
  * Licence URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
  */
@@ -20,6 +20,14 @@ if(!defined('ABSPATH')){
 if ( ! defined( 'JPAY_DIR' ) ) {
         define( 'JPAY_DIR', plugin_dir_path( __FILE__ ) );
 }
+
+// Get the plugin data, by parsing the metadata in this file header.
+// The performance impacts should be negligible for such a small plugin and considering everything that WP already does for other requests.
+// If this becomes a problem, we should simply move this to a static constant on the code.
+// See: https://wordpress.stackexchange.com/questions/361/is-there-a-way-for-a-plug-in-to-get-its-own-version-number/367#367
+$pluginData = get_file_data(__FILE__, array('Version' => 'Version'), false);
+
+define( 'JPAY_PLUGIN_VERSION', $pluginData['Version'] );
 
 /**
  * check for the woocommerce plugin
