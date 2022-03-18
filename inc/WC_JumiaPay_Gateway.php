@@ -43,7 +43,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
             $this->get_option('sandbox_country_list'),
             $this->get_option('sandbox_shop_config_key'),
             $this->get_option('sandbox_api_key'),
-            JPAY_PLUGIN_VERSION, // global variable setted in woocommerce-jumiapay.php. 
+            JPAY_PLUGIN_VERSION
         );
 
         $this->JpayClient = $JpayClient;

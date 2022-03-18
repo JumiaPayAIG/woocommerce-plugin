@@ -2,8 +2,8 @@
 Contributors: jpaywebshop
 Tags: payment request, jumiapay, woocommerce, payment gateway
 Requires at least: 5.3
-Tested up to: 5.6
-Stable tag: 1.3.0
+Tested up to: 5.9
+Stable tag: 1.5.2
 License: Apache-2.0 License
 License URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
 
