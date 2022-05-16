@@ -3,8 +3,8 @@
 /*
  * JumiaPay Gateway
  */
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+if (!defined('ABSPATH')) {
+  exit;
 }
 
 require_once JPAY_DIR . 'inc/WC_JumiaPay_Callback.php';
@@ -13,181 +13,191 @@ require_once JPAY_DIR . 'inc/WC_JumiaPay_Purchase.php';
 require_once JPAY_DIR . 'inc/WC_JumiaPay_Refund.php';
 require_once JPAY_DIR . 'inc/validators/WC_JumiaPay_Validators.php';
 
-class WC_JumiaPay_Gateway extends WC_Payment_Gateway {
+class WC_JumiaPay_Gateway extends WC_Payment_Gateway
+{
 
 
-    public $JpayClient;
+  public $JpayClient;
 
-    /*
+  /*
      * plugin construct which contain :
      * main (variablues , methods , functions, settings in the admin , web hook)
      */
-    public function __construct() {
-        //plugin main settings for the admin and check out page
-        $this->id   = 'jumia-pay';
-        $this->icon = apply_filters( 'woocommerce_jumiaPay_icon', plugins_url('/assets/image/Jumia-pay-logo-vertival.svg', dirname( __FILE__ ) ) );
-        $this->has_fields = true;
+  public function __construct()
+  {
+    //plugin main settings for the admin and check out page
+    $this->id   = 'jumia-pay';
 
-        $this->method_title =  esc_html('JumiaPay');
-        $this->method_description = esc_html('JumiaPay for WooCommerce - Payment Gateway');
+    $country = $this->get_option('environment') == 'Live' ? $this->get_option('country_list') : $this->get_option('sandbox_country_list');
+    $image_url = $country == 'EG' ? '/assets/image/Jumiapay_mastercard_visa_meza.png' : '/assets/image/Jumiapay_mastercard_visa.png';
 
-        $this->title = esc_html('JumiaPay');
-        $this->description = esc_html('Pay with your JumiaPay account and your preferred payment options');
-        $this->instructions = $this->get_option( 'instructions', $this->description );
+    $this->icon = apply_filters('woocommerce_jumiaPay_icon', plugins_url($image_url, dirname(__FILE__)));
+    $this->has_fields = true;
 
-        $JpayClient = new WC_JumiaPay_Client(
-            $this->get_option('environment'),
-            $this->get_option('country_list'),
-            $this->get_option('shop_config_key'),
-            $this->get_option('api_key'),
-            $this->get_option('sandbox_country_list'),
-            $this->get_option('sandbox_shop_config_key'),
-            $this->get_option('sandbox_api_key'),
-            JPAY_PLUGIN_VERSION, // global variable setted in woocommerce-jumiapay.php. 
-        );
+    $this->method_title =  esc_html('JumiaPay');
+    $this->method_description = esc_html('JumiaPay for WooCommerce - Payment GatewayGet additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
 
-        $this->JpayClient = $JpayClient;
+    $this->title = esc_html('JumiaPay');
+    $this->description = esc_html('Pay securely with JumiaPay and get 10% discount');
+    $this->instructions = $this->get_option('instructions', $this->description);
 
-        //plugin support for pay and refund
-        $this->supports = array(
-            'products',
-            'refunds',
-        );
+    $JpayClient = new WC_JumiaPay_Client(
+      $this->get_option('environment'),
+      $this->get_option('country_list'),
+      $this->get_option('shop_config_key'),
+      $this->get_option('api_key'),
+      $this->get_option('sandbox_country_list'),
+      $this->get_option('sandbox_shop_config_key'),
+      $this->get_option('sandbox_api_key'),
+      JPAY_PLUGIN_VERSION, // global variable setted in woocommerce-jumiapay.php. 
+    );
 
-        //initiate plugin fields hook
-        $this->init_form_fields();
+    $this->JpayClient = $JpayClient;
 
-        //initiate plugin settings hook
-        $this->init_settings();
+    //plugin support for pay and refund
+    $this->supports = array(
+      'products',
+      'refunds',
+    );
 
-        //action hook for the payment process
-        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+    //initiate plugin fields hook
+    $this->init_form_fields();
 
-        //action hook for the payment return
-        add_action( 'woocommerce_api_payment_return', array($this, 'payment_return'));
+    //initiate plugin settings hook
+    $this->init_settings();
 
-        //action hook for the payment callback
-        add_action( 'woocommerce_api_payment_callback', array($this, 'payment_callback'));
+    //action hook for the payment process
+    add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+
+    //action hook for the payment return
+    add_action('woocommerce_api_payment_return', array($this, 'payment_return'));
+
+    //action hook for the payment callback
+    add_action('woocommerce_api_payment_callback', array($this, 'payment_callback'));
+  }
+
+  //settings fields function
+  public function init_form_fields()
+  {
+    $this->form_fields = include dirname(__FILE__) . '/settings/settings.php';
+  }
+
+  public function process_payment($orderId)
+  {
+    $purchase = new WC_JumiaPay_Purchase(
+      wc_get_order($orderId),
+      $this->JpayClient->getCountryCode(),
+      get_bloginfo('language'),
+      get_home_url(),
+      get_woocommerce_currency(),
+      $this->JpayClient->getShopConfig()
+    );
+
+    return $this->JpayClient->createPurchase($purchase->generateData(), $orderId);
+  }
+
+  public function payment_callback()
+  {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+      $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
+      if ($orderId == '' || $orderId == false || $orderId == null) {
+        return;
+      }
+
+      $body = file_get_contents('php://input');
+      $DecodeBody = urldecode($body);
+      parse_str($DecodeBody, $bodyArray);
+      $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
+
+      if (!isset($JsonDecodeBody[0]['newStatus'])) {
+        wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
+        return;
+      }
+
+      $callbackHandler = new WC_JumiaPay_Callback(wc_get_order($orderId));
+      $success = $callbackHandler->handle($JsonDecodeBody[0]['newStatus']);
+
+      if ($success) {
+        wp_send_json(['success' => true], 200);
+      } else {
+        wp_send_json(['success' => false, 'payload' => 'Wrong Order Status for this callback'], 400);
+      }
+    }
+  }
+
+
+  public function payment_return()
+  {
+
+    $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
+    if ($orderId == '' || $orderId == false || $orderId == null) {
+      return;
     }
 
-    //settings fields function
-    public function init_form_fields() {
-		    $this->form_fields = include dirname( __FILE__ ) . '/settings/settings.php';
+    $paymentStatus = WC_JumiaPay_Validator::ValidatePaymentStatus(filter_input(INPUT_GET, 'paymentStatus', FILTER_SANITIZE_ENCODED));
+    $order = wc_get_order($orderId);
+
+    if ($paymentStatus == '' || $paymentStatus == false || $paymentStatus == null) {
+      wc_add_notice('Payment Failed', 'error');
+      if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
+        exit;
+      }
     }
 
-    public function process_payment($orderId)
-    {
-        $purchase = new WC_JumiaPay_Purchase(
-            wc_get_order($orderId),
-            $this->JpayClient->getCountryCode(),
-            get_bloginfo('language'),
-            get_home_url(),
-            get_woocommerce_currency(),
-            $this->JpayClient->getShopConfig()
-        );
-
-        return $this->JpayClient->createPurchase($purchase->generateData(), $orderId);
+    if ($paymentStatus == 'failure') {
+      wc_add_notice('Payment Cancelled', 'error');
+      if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
+        exit;
+      }
     }
 
-    public function payment_callback() {
-        if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    if ($paymentStatus == 'success') {
+      if (wp_safe_redirect($this->get_return_url($order))) {
+        exit;
+      }
+    }
+  }
 
-            $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
-            if ($orderId == '' || $orderId == false || $orderId == null) {
-              return;
-            }
+  public function process_refund($orderId, $amount = null, $reason = '')
+  {
 
-            $body = file_get_contents('php://input');
-            $DecodeBody=urldecode($body);
-            parse_str($DecodeBody,$bodyArray);
-            $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
+    $order = wc_get_order($orderId);
 
-            if (!isset($JsonDecodeBody[0]['newStatus'])) {
-                wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
-                return;
-            }
+    $refund = new WC_JumiaPay_Refund(
+      $order,
+      $amount,
+      get_woocommerce_currency(),
+      $this->JpayClient->getShopConfig()
+    );
 
-            $callbackHandler = new WC_JumiaPay_Callback(wc_get_order($orderId));
-            $success = $callbackHandler->handle($JsonDecodeBody[0]['newStatus']);
+    $result = $this->JpayClient->createRefund($refund->generateData());
 
-            if ($success) {
-                wp_send_json(['success' => true], 200);
-            } else {
-                wp_send_json(['success' => false, 'payload' => 'Wrong Order Status for this callback'], 400);
-            }
-        }
+    if (isset($result['note'])) {
+      $order->add_order_note($result['note'], true);
     }
 
+    return $result['success'];
+  }
 
-    public function payment_return() {
+  public function order_cancelled($orderId, $oldStatus, $newStatus)
+  {
+    $order = wc_get_order($orderId);
 
-        $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
-        if ($orderId == '' || $orderId == false || $orderId == null) {
-            return;
-        }
+    if ($newStatus == 'cancelled') {
 
-        $paymentStatus = WC_JumiaPay_Validator::ValidatePaymentStatus(filter_input(INPUT_GET, 'paymentStatus', FILTER_SANITIZE_ENCODED));
-        $order = wc_get_order($orderId);
-
-        if ($paymentStatus == '' || $paymentStatus == false || $paymentStatus == null) {
-            wc_add_notice('Payment Failed', 'error');
-            if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
-              exit;
-            }
-        }
-
-        if($paymentStatus=='failure'){
-            wc_add_notice('Payment Cancelled', 'error');
-            if (wp_safe_redirect(wc_get_page_permalink('cart'))) {
-              exit;
-            }
-        }
-
-        if($paymentStatus=='success'){
-            if (wp_safe_redirect($this->get_return_url($order))) {
-              exit;
-            }
-        }
-    }
-
-    public function process_refund($orderId, $amount = null, $reason = '' ) {
-
-        $order = wc_get_order($orderId);
-
-        $refund = new WC_JumiaPay_Refund(
-            $order,
-            $amount,
-            get_woocommerce_currency(),
-            $this->JpayClient->getShopConfig()
-        );
-
-        $result = $this->JpayClient->createRefund($refund->generateData());
+      $merchantReferenceId = get_post_meta($orderId, '_purchaseId', true);
+      if ($merchantReferenceId != '') {
+        $result = $this->JpayClient->cancelPurchase($merchantReferenceId, $order);
 
         if (isset($result['note'])) {
           $order->add_order_note($result['note'], true);
         }
 
-        return $result['success'] ;
+        return $result['success'];
+      }
     }
 
-    public function order_cancelled($orderId, $oldStatus, $newStatus){
-        $order = wc_get_order($orderId);
-
-        if($newStatus == 'cancelled'){
-
-            $merchantReferenceId=get_post_meta($orderId, '_purchaseId',true);
-            if ($merchantReferenceId != '') {
-                $result = $this->JpayClient->cancelPurchase($merchantReferenceId, $order);
-
-                if (isset($result['note'])) {
-                  $order->add_order_note($result['note'], true);
-                }
-
-                return $result['success'] ;
-            }
-
-        }
-
-        return false;
-    }
+    return false;
+  }
 }
