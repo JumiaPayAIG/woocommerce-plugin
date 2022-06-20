@@ -29,7 +29,25 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->id   = 'jumia-pay';
 
     $country = $this->get_option('environment') == 'Live' ? $this->get_option('country_list') : $this->get_option('sandbox_country_list');
-    $image_url = $country == 'EG' ? '/assets/image/Jumiapay_mastercard_visa_meza.png' : '/assets/image/Jumiapay_mastercard_visa.png';
+    $image_url = '';
+    
+    switch ($country) {
+      case 'EG':
+        $image_url = '/assets/image/secured_payfac_eg.png';
+        break;
+      case 'KE':
+        $image_url = '/assets/image/secured_payfac_kenya.png';
+        break;
+      case 'NG':
+        $image_url = '/assets/image/secured_payfac_ng.png';
+        break;
+      case 'CI':
+        $image_url = '/assets/image/secured_payfac_ic.png';
+        break;
+      default:
+        $image_url = '/assets/image/secured_payfac_not_country_specific.png';
+    }
+    $country == 'EG' ? '/assets/image/Jumiapay_mastercard_visa_meza.png' : '/assets/image/Jumiapay_mastercard_visa.png';
 
     $this->icon = apply_filters('woocommerce_jumiaPay_icon', plugins_url($image_url, dirname(__FILE__)));
     $this->has_fields = true;
@@ -38,7 +56,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->method_description = esc_html('JumiaPay for WooCommerce - Payment GatewayGet additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
 
     $this->title = esc_html('JumiaPay');
-    $this->description = esc_html('Pay securely with JumiaPay and get 10% discount');
+    $this->description = esc_html('Pay securely with JumiaPay and Get up to 10% discount');
     $this->instructions = $this->get_option('instructions', $this->description);
 
     $JpayClient = new WC_JumiaPay_Client(
@@ -49,7 +67,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $this->get_option('sandbox_country_list'),
       $this->get_option('sandbox_shop_config_key'),
       $this->get_option('sandbox_api_key'),
-      JPAY_PLUGIN_VERSION, // global variable setted in woocommerce-jumiapay.php. 
+      JPAY_PLUGIN_VERSION
     );
 
     $this->JpayClient = $JpayClient;
