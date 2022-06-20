@@ -47,7 +47,6 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       default:
         $image_url = '/assets/image/secured_payfac_not_country_specific.png';
     }
-    $country == 'EG' ? '/assets/image/Jumiapay_mastercard_visa_meza.png' : '/assets/image/Jumiapay_mastercard_visa.png';
 
     $this->icon = apply_filters('woocommerce_jumiaPay_icon', plugins_url($image_url, dirname(__FILE__)));
     $this->has_fields = true;
