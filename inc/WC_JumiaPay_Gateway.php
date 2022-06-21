@@ -45,7 +45,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
         $image_url = '/assets/image/secured_payfac_ic.png';
         break;
       default:
-        $image_url = '/assets/image/secured_payfac_not_country_specific.png';
+        $image_url = '/assets/image/secured_payfac_not-country-specific.png';
     }
 
     $this->icon = apply_filters('woocommerce_jumiaPay_icon', plugins_url($image_url, dirname(__FILE__)));
