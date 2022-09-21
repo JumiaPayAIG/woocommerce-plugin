@@ -62,9 +62,11 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $this->get_option('environment'),
       $this->get_option('country_list'),
       $this->get_option('shop_config_key'),
+      $this->get_option('shop_config_id'),
       $this->get_option('api_key'),
       $this->get_option('sandbox_country_list'),
       $this->get_option('sandbox_shop_config_key'),
+      $this->get_option('sandbox_shop_config_id'),
       $this->get_option('sandbox_api_key'),
       JPAY_PLUGIN_VERSION
     );
@@ -101,13 +103,14 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
 
   public function process_payment($orderId)
   {
+    $lang = explode('-', get_bloginfo('language'));
+    $lang = $lang[0];
     $purchase = new WC_JumiaPay_Purchase(
       wc_get_order($orderId),
       $this->JpayClient->getCountryCode(),
-      get_bloginfo('language'),
+      $lang,
       get_home_url(),
-      get_woocommerce_currency(),
-      $this->JpayClient->getShopConfig()
+      get_woocommerce_currency()
     );
 
     return $this->JpayClient->createPurchase($purchase->generateData(), $orderId);
@@ -146,7 +149,6 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
 
   public function payment_return()
   {
-
     $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
     if ($orderId == '' || $orderId == false || $orderId == null) {
       return;

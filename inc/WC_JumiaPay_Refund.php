@@ -43,13 +43,15 @@ class WC_JumiaPay_Refund {
 
     public function generateData() {
         $merchantReferenceId=get_post_meta($this->order->get_id(), '_merchantReferenceId', true );
-
+        $purchaseId = get_post_meta($this->order->get_id(), '_purchaseId', true);
+        
         return [
             "shopConfig" => $this->shopConfig,
             "refundAmount" => sanitize_text_field($this->amount),
             "refundCurrency" => $this->currency,
             "description" => sanitize_text_field("Refund for order #".$merchantReferenceId),
             "purchaseReferenceId" => $merchantReferenceId,
+            "purchaseId" => $purchaseId,
             "referenceId"=> sanitize_text_field($this->generateMerchantReference())
         ];
     }

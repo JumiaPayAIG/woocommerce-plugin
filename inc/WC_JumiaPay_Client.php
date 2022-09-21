@@ -23,6 +23,11 @@ class WC_JumiaPay_Client {
     /*
      * @var string
      */
+    public $shopConfigId;
+
+    /*
+     * @var string
+     */
     public $apiKey;
 
 
@@ -39,6 +44,11 @@ class WC_JumiaPay_Client {
     /*
      * @var string
      */
+    public $sandboxShopConfigId;
+
+    /*
+     * @var string
+     */
     public $sandboxApiKey;
 
     /** @var string */
@@ -47,9 +57,11 @@ class WC_JumiaPay_Client {
     public function __construct($env,
         $countryCode,
         $shopConfig,
+        $shopConfigId,
         $apikey,
         $sandboxCountryCode,
         $sandboxShopConfig,
+        $sandboxShopConfigId,
         $sandboxApiKey,
         $pluginVersion
     ) {
@@ -58,10 +70,12 @@ class WC_JumiaPay_Client {
 
         $this->countryCode = WC_JumiaPay_Validator::ValidateCountryCode($countryCode);
         $this->shopConfig = sanitize_text_field($shopConfig);
+        $this->shopConfigId = sanitize_text_field($shopConfigId);
         $this->apiKey = sanitize_text_field($apikey);
 
         $this->sandboxCountryCode = WC_JumiaPay_Validator::ValidateCountryCode($sandboxCountryCode);
         $this->sandboxShopConfig=sanitize_text_field($sandboxShopConfig);
+        $this->sandboxShopConfigId = sanitize_text_field($sandboxShopConfigId);
         $this->sandboxApiKey=sanitize_text_field($sandboxApiKey);
     
     }
@@ -76,12 +90,20 @@ class WC_JumiaPay_Client {
     /**
      * @return string
      */
+    public function getShopConfigId() {
+        return $this->isLiveEnv() ? $this->shopConfigId : $this->sandboxShopConfigId;
+    }
+
+    /**
+     * @return string
+     */
     public function getCountryCode() {
         return $this->isLiveEnv() ? $this->countryCode : $this->sandboxCountryCode;
     }
 
     public function createRefund($data) {
         $response = $this->makeRequest('post', $this->getBaseUrl().'/merchant/refund', $data);
+
         if (!is_wp_error($response)) {
             $body = json_decode($response['body'], true);
 
@@ -100,29 +122,28 @@ class WC_JumiaPay_Client {
     }
 
     public function createPurchase($data, $orderId) {
-
-        $response = $this->makeRequest('post', $this->getBaseUrl().'/merchant/create', $data);
-
+        $response = $this->makeRequest('post', $this->getBaseUrl().'/v2/merchants/' . $this->getShopConfigId() . '/purchases', $data);
+        
         // check for the respond errors
         if (!is_wp_error($response)) {
 
             $body = json_decode($response['body'], true);
 
             // check for the respond body
-            if ($body['success'] == 'true') {
+            if (isset($body['purchaseId'])) {
 
                 //save the purchaseId and the merchantReferenceId in the database
-                update_post_meta( $orderId, '_purchaseId', $body['payload']['purchaseId']);
-                update_post_meta( $orderId, '_merchantReferenceId', $data['merchantReferenceId']);
+                update_post_meta( $orderId, '_purchaseId', $body['purchaseId']);
+                update_post_meta( $orderId, '_merchantReferenceId', $data['merchant']['referenceId']);
 
                 //redirect to jumiaPay gateway
                 return array(
                     'result' => 'success',
-                    'redirect' => $body['payload']['checkoutUrl']
+                    'redirect' => $body['links'][0]['href']
                 );
             }
             else {
-                wc_add_notice('Error payment failed case '.$body['payload'][0]['description'].' code-'.$body['payload'][0]['code'],'error');
+                wc_add_notice('Error payment failed case '.$body['details'][0]['message'].' code-'.$body['internal_code'],'error');
                 WC()->cart->empty_cart();
                 wp_delete_post( $orderId, false );
                 return;
