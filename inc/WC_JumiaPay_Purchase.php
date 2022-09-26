@@ -72,8 +72,7 @@ class WC_JumiaPay_Purchase {
 
     public function generateData() {
         $merchantReferenceId = $this->generateMerchantReference();
-
-        return [
+        $data = [
             "description" => "Payment for order #" . $merchantReferenceId,
             "amount" => [
               "value" => sanitize_text_field($this->order->get_total()),
@@ -126,5 +125,7 @@ class WC_JumiaPay_Purchase {
                 "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ]
         ];
+
+        return array_filter( $data, function( $v ) { return !( is_null( $v) or '' === $v ); } );
     }
 }
