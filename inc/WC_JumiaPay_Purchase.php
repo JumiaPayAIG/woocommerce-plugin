@@ -73,13 +73,13 @@ class WC_JumiaPay_Purchase {
     public function generateData() {
         $merchantReferenceId = $this->generateMerchantReference();
         $data = [
-            "description" => "Payment for order #" . $merchantReferenceId,
+            "description" => sanitize_text_field(substr("Payment for order" . $merchantReferenceId, 0, 250)),
             "amount" => [
               "value" => sanitize_text_field($this->order->get_total()),
               "currency" => $this->currency
             ],
             "merchant" => [
-              "referenceId" => $merchantReferenceId,
+              "referenceId" => sanitize_text_field($merchantReferenceId),
               "callbackUrl" => esc_url_raw($this->baseUrl."/wc-api/payment_callback/?orderid=".$this->order->get_id()),
               "returnUrl" => esc_url_raw($this->baseUrl."/wc-api/payment_return/?orderid=".$this->order->get_id())
             ],
@@ -99,11 +99,11 @@ class WC_JumiaPay_Purchase {
                 "items"=>$this->getBasket(),
             ],
             "shippingAddress"=> [
-                "addressPrimary"=> sanitize_text_field($this->order->get_shipping_address_1()),
-                "addressSecondary"=> sanitize_text_field($this->order->get_shipping_address_2()),
+                "addressPrimary"=> sanitize_text_field(substr($this->order->get_shipping_address_1(), 0, 512)),
+                "addressSecondary"=> sanitize_text_field(substr($this->order->get_shipping_address_2(), 0, 512)),
                 "city"=> sanitize_text_field(substr($this->order->get_shipping_city(), 0, 50)),
-                "district"=> sanitize_text_field($this->order->get_shipping_state()),
-                "province"=> sanitize_text_field($this->order->get_shipping_state()),
+                "district"=> sanitize_text_field(substr($this->order->get_shipping_state(), 0, 50)),
+                "province"=> sanitize_text_field(substr($this->order->get_shipping_state(), 0, 50)),
                 "zip"=> sanitize_text_field(substr($this->order->get_shipping_postcode(), 0, 10)),
                 "country"=> sanitize_text_field($this->order->get_shipping_country()),
                 "name"=> sanitize_text_field(substr($this->order->get_shipping_first_name()." ".$this->order->get_shipping_last_name(), 0, 100)),
@@ -112,11 +112,11 @@ class WC_JumiaPay_Purchase {
                 "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ],
             "billingAddress"=> [
-                "addressPrimary"=> sanitize_text_field($this->order->get_billing_address_1()),
-                "addressSecondary"=> sanitize_text_field($this->order->get_billing_address_2()),
+                "addressPrimary"=> sanitize_text_field(substr($this->order->get_billing_address_1(), 0, 512)),
+                "addressSecondary"=> sanitize_text_field(substr($this->order->get_billing_address_2(), 0, 512)),
                 "city"=> sanitize_text_field(substr($this->order->get_billing_city(), 0, 50)),
-                "district"=> sanitize_text_field($this->order->get_billing_state()),
-                "province"=> sanitize_text_field($this->order->get_billing_state()),
+                "district"=> sanitize_text_field(substr($this->order->get_billing_state(), 0, 50)),
+                "province"=> sanitize_text_field(substr($this->order->get_billing_state(), 0, 50)),
                 "zip"=> sanitize_text_field(substr($this->order->get_billing_postcode(), 0, 10)),
                 "country"=> sanitize_text_field($this->order->get_billing_country()),
                 "name"=> sanitize_text_field(substr($this->order->get_billing_first_name()." ".$this->order->get_billing_last_name(), 0, 100)),
