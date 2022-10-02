@@ -129,10 +129,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $DecodeBody = urldecode($body);
       parse_str($DecodeBody, $bodyArray);
       $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
-      //
-      $order = wc_get_order($orderId);
-      $order->add_order_note($bodyArray['transactionEvents'], true);
-      //
+      
       if (!isset($JsonDecodeBody[0]['newStatus'])) {
         wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
         return;
