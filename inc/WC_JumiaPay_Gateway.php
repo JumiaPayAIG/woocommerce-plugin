@@ -52,7 +52,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->has_fields = true;
 
     $this->method_title =  esc_html('JumiaPay');
-    $this->method_description = esc_html('JumiaPay for WooCommerce - Payment GatewayGet additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
+    $this->method_description = esc_html('JumiaPay for WooCommerce - Payment Gateway Get additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
 
     $this->title = esc_html('JumiaPay');
     $this->description = esc_html('Pay securely with JumiaPay and Get up to 10% discount');
@@ -129,7 +129,10 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $DecodeBody = urldecode($body);
       parse_str($DecodeBody, $bodyArray);
       $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
-
+      //
+      $order = wc_get_order($orderId);
+      $order->add_order_note($bodyArray['transactionEvents'], true);
+      //
       if (!isset($JsonDecodeBody[0]['newStatus'])) {
         wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
         return;
