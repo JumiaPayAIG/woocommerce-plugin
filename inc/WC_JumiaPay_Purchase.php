@@ -73,7 +73,7 @@ class WC_JumiaPay_Purchase {
     public function generateData() {
         $merchantReferenceId = $this->generateMerchantReference();
         $data = [
-            "description" => sanitize_text_field(substr("Payment for order" . $merchantReferenceId, 0, 250)),
+            "description" => sanitize_text_field(substr("Payment for order " . $merchantReferenceId, 0, 250)),
             "amount" => [
               "value" => sanitize_text_field($this->order->get_total()),
               "currency" => $this->currency
