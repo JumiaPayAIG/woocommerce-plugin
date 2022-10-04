@@ -52,7 +52,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->has_fields = true;
 
     $this->method_title =  esc_html('JumiaPay');
-    $this->method_description = esc_html('JumiaPay for WooCommerce - Payment GatewayGet additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
+    $this->method_description = esc_html('JumiaPay for WooCommerce - Payment Gateway Get additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
 
     $this->title = esc_html('JumiaPay');
     $this->description = esc_html('Pay securely with JumiaPay and Get up to 10% discount');
@@ -62,9 +62,11 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $this->get_option('environment'),
       $this->get_option('country_list'),
       $this->get_option('shop_config_key'),
+      $this->get_option('shop_config_id'),
       $this->get_option('api_key'),
       $this->get_option('sandbox_country_list'),
       $this->get_option('sandbox_shop_config_key'),
+      $this->get_option('sandbox_shop_config_id'),
       $this->get_option('sandbox_api_key'),
       JPAY_PLUGIN_VERSION
     );
@@ -101,13 +103,14 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
 
   public function process_payment($orderId)
   {
+    $lang = explode('-', get_bloginfo('language'));
+    $lang = $lang[0];
     $purchase = new WC_JumiaPay_Purchase(
       wc_get_order($orderId),
       $this->JpayClient->getCountryCode(),
-      get_bloginfo('language'),
+      $lang,
       get_home_url(),
-      get_woocommerce_currency(),
-      $this->JpayClient->getShopConfig()
+      get_woocommerce_currency()
     );
 
     return $this->JpayClient->createPurchase($purchase->generateData(), $orderId);
@@ -126,7 +129,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
       $DecodeBody = urldecode($body);
       parse_str($DecodeBody, $bodyArray);
       $JsonDecodeBody = json_decode($bodyArray['transactionEvents'], true);
-
+      
       if (!isset($JsonDecodeBody[0]['newStatus'])) {
         wp_send_json(['success' => false, 'payload' => 'Wrong Paylod received'], 400);
         return;
@@ -146,7 +149,6 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
 
   public function payment_return()
   {
-
     $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
     if ($orderId == '' || $orderId == false || $orderId == null) {
       return;

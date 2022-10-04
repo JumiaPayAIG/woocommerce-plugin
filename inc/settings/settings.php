@@ -51,6 +51,11 @@ $pluginFields=array(
         'type' => 'textarea',
         'default' => '',
     ),
+    "shop_config_id"=> array(
+        'title' => esc_html('Shop Config ID'),
+        'type' => 'textarea',
+        'default' => '',
+    ),
     "api_key"=> array(
         'title' => esc_html('Merchant Api Key'),
         'type' => 'textarea',
@@ -82,6 +87,11 @@ $pluginFields=array(
     ),
     "sandbox_shop_config_key"=> array(
         'title' => esc_html('Shop Key'),
+        'type' => 'textarea',
+        'default' => '',
+    ),
+    "sandbox_shop_config_id"=> array(
+        'title' => esc_html('Shop Config ID'),
         'type' => 'textarea',
         'default' => '',
     ),
