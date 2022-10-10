@@ -125,7 +125,16 @@ class WC_JumiaPay_Purchase {
                 "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ]
         ];
+        
+        return $this->filterNotNull($data);
+    }
 
-        return array_filter( $data, function( $v ) { return !( is_null( $v) or '' === $v ); } );
+    private function filterNotNull($data) {
+      $data = array_map(function($item) {
+          return is_array($item) ? $this->filterNotNull($item) : $item;
+      }, $data);
+      return array_filter($data, function($item) {
+          return $item !== "" && $item !== null && (!is_array($item) || count($item) > 0);
+      });
     }
 }
