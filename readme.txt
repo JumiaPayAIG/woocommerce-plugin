@@ -7,30 +7,34 @@ Stable tag: 2.0.1
 License: Apache-2.0 License
 License URI: https://github.com/JumiaPayAIG/woocommerce-plugin/blob/master/LICENSE
 
-JumiaPay payment gateway for WooCommerce that accepts all major payment methods available.
+This is a JumiaPay payment gateway for WooCommerce.
+JumiaPay WooCommerce payment gateway enables you to accept payments in Nigeria and Egypt.
 
 == Description ==
 
+This is a JumiaPay payment gateway for WooCommerce.
+
 JumiaPay handles the payments so you can focus on your business!
 JumiaPay checkout page enables your customers to pay for your products or services online in a safe and secure way. They use state-of-the-art fraud detection technology to keep you safe and handle all aspects of PCI DSS compliance at no extra cost to you.
-The checkout solution is live in Egypt and soon in more countries: Kenya, Nigeria, Morocco, Ghana, Uganda, Tunisia and Ivory Coast and accepts:
 
-- Nigeria: Mastercard, Visa and Verve 
-- Egypt: Mastercard, Visa, Meeza Cards and Fawry 
-- Kenya: Mastercard, Visa, Air-tel and MPESA 
-- Marocco: Mastercard, Visa, CMI 
-- Uganda: Mastercard and Visa
-- Ghana: Mastercard and Visa
-- Ivory Coast: Mastercard and Visa
-- Tunisia: Mastercard and Visa
+JumiaPay WooCommerce payment gateway enables you to accept payments in Nigeria and Egypt. The payment methods that JumiaPay offers in each of these countries are:
+
+In Nigeria:
+-   Bank Transfer
+-   Cards (Mastercard, Visa, Verve)
+
+In Egypt:
+-   Cards (Mastercard, Visa)
+-   Fawry
+-   Meeza Digital - Mobile Wallets
 
 What do you need to start using this WooCommerce plugin?
-1.  You need to open a JumiaPay Business account ([here](https://business-pay.jumia.com.eg/), if you are in Egypt.). Then, follow JumiaPay instructions on how to activate your business and get your credentials to proceed with the plugin installation
+1.  You need to open a JumiaPay Business account [here](https://business-pay.jumia.com.ng/). Then, follow JumiaPay instructions on how to activate your business and get your credentials to proceed with the plugin installation
 2.  You need to instal and activate the WooCommerce plugin for JumiaPay on your WordPress website
 
 Plugin Features:
 -   Easily integrate JumiaPay WooCommerce payment gateway on your website. Our teams will always be there to help!
--   Accept all popular and trusted payment methods available in your countries
+-   Accept all popular and trusted payment methods: Mastercard, Visa, Verve, Bank Accounts, Fawry and Mezza Digital - Mobile Wallets
 -   Fast checkout for your consumers with tokenized payment methods
 -   State-of-the-art fraud detection technology to keep you safe
 -   PCI DSS compliant environment
@@ -39,7 +43,7 @@ Plugin Features:
 
 
 Importante Note:
-This plugin is meant to be used by businesses in Egypt. Therefore, you will need to set your stores in the country you operate. The local currency needs to be configured in the ‘General’ tab on the WooCommerce settings page.
+This plugin is meant to be used by businesses in Nigeria and Egypt. Therefore, you will need to set your store country to Nigeria or Egypt and the currency to Nigerian Naira or Egyptian pound in the ‘General’ tab on the WooCommerce settings page.
 
 == Installation ==
 
@@ -100,6 +104,14 @@ To configure and use the sandbox, please follow the instructions provided on the
 
 You may find our documentation with detailed steps on how to install and configure the JumiaPay WooCommerce Payment Gateway and on how to monitor and take actions over your received payments.
 
+= Which payment methods does JumiaPay offer? =
+
+JumiaPay WooCommerce Payment Gateway enables you to accept payments in Nigeria, and Egypt. The payment methods that JumiaPay offers in each of these countries are Bank Transfer and Cards (Mastercard, Visa, Verve) in Nigeria and Cards (Mastercard, Visa), Fawry and Meeza Digital - Mobile Wallets in Egypt.
+
 = Can I refund a customer via JumiaPay? =
 
 Yes. Check our documentation for detailed information.
+
+= In which countries is JumiaPay WooCommerce Payment Gateway available? =
+
+Nigeria and Egypt.
