@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once JPAY_DIR . 'inc/helpers/WC_JumiaPay_Cleaner.php';
+
 class WC_JumiaPay_Purchase {
 
     public $order;
@@ -126,15 +128,6 @@ class WC_JumiaPay_Purchase {
             ]
         ];
         
-        return $this->filterNotNull($data);
-    }
-
-    private function filterNotNull($data) {
-      $data = array_map(function($item) {
-          return is_array($item) ? $this->filterNotNull($item) : $item;
-      }, $data);
-      return array_filter($data, function($item) {
-          return $item !== "" && $item !== null && (!is_array($item) || count($item) > 0);
-      });
+        return WC_JumiaPay_Cleaner::filterNotNull($data);
     }
 }

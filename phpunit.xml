@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="true"
+         stopOnFailure="false">
+
+  <testsuite name="JumiaPay PHPUnit">
+    <directory suffix="Test.php">tests/</directory>
+  </testsuite>
+
+  <logging>
+    <log type="coverage-clover" target="coverage-result.xml" />
+    <log type="junit" target="execution-result.xml" />
+  </logging>
+
+</phpunit>
