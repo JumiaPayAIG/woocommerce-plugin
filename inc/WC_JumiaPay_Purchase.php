@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+require_once JPAY_DIR . 'inc/helpers/WC_JumiaPay_Cleaner.php';
+
 class WC_JumiaPay_Purchase {
 
     public $order;
@@ -125,7 +127,7 @@ class WC_JumiaPay_Purchase {
                 "mobilePhoneNumber"=> wc_sanitize_phone_number($this->order->get_billing_phone())
             ]
         ];
-
-        return array_filter( $data, function( $v ) { return !( is_null( $v) or '' === $v ); } );
+        
+        return WC_JumiaPay_Cleaner::filterNotNull($data);
     }
 }
