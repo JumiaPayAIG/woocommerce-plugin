@@ -12,20 +12,17 @@ class WC_JumiaPay_Client_Test extends TestCase
 
   protected function setUp(): void
   {
-    if (!function_exists('sanitize_text_field')) 
+    function sanitize_text_field($value)
     {
-      function sanitize_text_field($value)
-      {
-        return $value;
-      }
-      function is_wp_error($value)
-      {
-        return false;
-      }
-      function update_post_meta($v1, $v2, $v3)
-      {
-        return true;
-      }
+      return $value;
+    }
+    function is_wp_error($value)
+    {
+      return false;
+    }
+    function update_post_meta($v1, $v2, $v3)
+    {
+      return true;
     }
     $this->client = new WC_JumiaPay_Client("", "", "", "", "", "", "", "", "", "");
   }
