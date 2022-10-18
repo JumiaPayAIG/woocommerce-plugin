@@ -1,0 +1,6 @@
+vendor
+.phpunit.result.cache
+composer.lock
+execution-result.xml
+coverage-result.xml
+jumiapay-wc.zip

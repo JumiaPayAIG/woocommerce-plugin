@@ -101,6 +101,19 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->form_fields = include dirname(__FILE__) . '/settings/settings.php';
   }
 
+  /**
+   * It creates a purchase object and sends it to the JumiaPay API.
+   * 
+   * @param orderId The order ID of the order that is being processed.
+   * 
+   * @return The return value is an array with the following structure:
+   * ```
+   * array(
+   *   'result' => 'success',
+   *   'redirect' => 'https://pay.jumia.com/checkout/{checkoutId}'
+   * )
+   * ```
+   */
   public function process_payment($orderId)
   {
     $lang = explode('-', get_bloginfo('language'));
@@ -116,6 +129,12 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     return $this->JpayClient->createPurchase($purchase->generateData(), $orderId);
   }
 
+  /**
+   * It receives a POST request from JumiaPay, extracts the order ID from the request, and then uses
+   * the order ID to get the order from the database
+   * 
+   * @return The callback is returning a json object with a success property.
+   */
   public function payment_callback()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -147,6 +166,13 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
   }
 
 
+  /**
+   * It checks if the payment status is success, failure or empty. If it's empty, it redirects to the
+   * cart page. If it's failure, it redirects to the cart page. If it's success, it redirects to the
+   * order received page
+   * 
+   * @return The payment status is being returned.
+   */
   public function payment_return()
   {
     $orderId = filter_input(INPUT_GET, 'orderid', FILTER_SANITIZE_ENCODED);
@@ -178,6 +204,15 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     }
   }
 
+  /**
+   * A function that is called when a refund is made on the order.
+   * 
+   * @param orderId The order ID to refund.
+   * @param amount The amount to refund. If not set, the entire order will be refunded.
+   * @param reason The reason for the refund.
+   * 
+   * @return The return value is a boolean value.
+   */
   public function process_refund($orderId, $amount = null, $reason = '')
   {
 
@@ -199,6 +234,15 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     return $result['success'];
   }
 
+  /**
+   * If the order status is changed to cancelled, then cancel the purchase in JPay
+   * 
+   * @param orderId The order ID
+   * @param oldStatus The status of the order before the change.
+   * @param newStatus The new status of the order.
+   * 
+   * @return The return value is a boolean.
+   */
   public function order_cancelled($orderId, $oldStatus, $newStatus)
   {
     $order = wc_get_order($orderId);

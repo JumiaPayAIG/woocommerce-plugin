@@ -35,6 +35,11 @@ class WC_JumiaPay_Purchase {
     }
 
 
+    /**
+     * It generates a unique reference for the order.
+     * 
+     * @return a string.
+     */
     private function generateMerchantReference() {
         $date = date_format(date_create(), 'U');
         $merchantReferenceId="wcpurchase".$this->order->get_id().$date;
@@ -49,6 +54,11 @@ class WC_JumiaPay_Purchase {
         return sanitize_text_field($merchantReferenceId);
     }
 
+    /**
+     * It returns the basket items.
+     * 
+     * @return An array of basket items
+     */
     private function getBasket() {
 
         $items = $this->order->get_items();
@@ -72,6 +82,11 @@ class WC_JumiaPay_Purchase {
         return $basketItems;
     }
 
+    /**
+     * It generates the data to be sent to the JumiaPay API
+     * 
+     * @return an array of data that will be used to create the payment request.
+     */
     public function generateData() {
         $merchantReferenceId = $this->generateMerchantReference();
         $data = [
