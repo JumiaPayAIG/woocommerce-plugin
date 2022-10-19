@@ -101,6 +101,13 @@ class WC_JumiaPay_Client {
         return $this->isLiveEnv() ? $this->countryCode : $this->sandboxCountryCode;
     }
 
+    /**
+     * It creates a refund for a given order.
+     * 
+     * @param data This is an array of the parameters to be sent to the JumiaPay API.
+     * 
+     * @return an array with two keys: success and note.
+     */
     public function createRefund($data) {
         $response = $this->makeRequest('post', $this->getBaseUrl().'/merchant/refund', $data);
 
@@ -121,6 +128,15 @@ class WC_JumiaPay_Client {
         }
     }
 
+    /**
+     * It creates a purchase on the JumiaPay API and returns a redirect URL to the JumiaPay payment
+     * gateway
+     * 
+     * @param data The data to be sent to the API.
+     * @param orderId The order ID of the order that was just created.
+     * 
+     * @return an array with the result and the redirect url.
+     */
     public function createPurchase($data, $orderId) {
         $response = $this->makeRequest('post', $this->getBaseUrl().'/v2/merchants/' . $this->getShopConfigId() . '/purchases', $data);
         
@@ -143,7 +159,7 @@ class WC_JumiaPay_Client {
                 );
             }
             else {
-                wc_add_notice('Error payment failed case '.$body['details'][0]['message'].' code-'.$body['internal_code'],'error');
+                wc_add_notice($this->getErrorMessage($body),'error');
                 WC()->cart->empty_cart();
                 wp_delete_post( $orderId, false );
                 return;
@@ -157,6 +173,16 @@ class WC_JumiaPay_Client {
         }
     }
 
+    /**
+     * It cancels a purchase.
+     * 
+     * @param merchantReferenceId This is the order ID of the order you want to cancel.
+     * @param order The order object
+     * 
+     * @return an array with the following keys:
+     * success: true or false
+     * note: A message to be displayed to the user
+     */
     public function cancelPurchase($merchantReferenceId, $order) {
 
         $data = [
@@ -179,6 +205,33 @@ class WC_JumiaPay_Client {
         else{
             return ['success' => false, 'note' => "JumiaPay Payment cancellation failed - Reason: Connection Failed"];
         }
+    }
+
+    /**
+     * It returns a string containing the error message.
+     * 
+     * @param response The response from the JumiaPay API
+     * 
+     * @return The response is a JSON object.
+     */
+    public function getErrorMessage($response) {
+      $message = "Error Connecting to JumiaPay";
+      if (isset($response['internal_code'])) {
+        $message = $message . " With code [".$response['internal_code']."]";
+      }
+      if (isset($response['details'][0]['message'])) {
+        $message = $message . " " .$response['details'][0]['message'];
+      }
+      if (isset($response['payload'][0]['code'])) {
+        $message = $message . " With code [" .$response['payload'][0]['code']."]";
+      }
+      if (isset($response['payload'][0]['description'])) {
+        $message = $message . " " .$response['payload'][0]['description'];
+      }
+      if (isset($response['message'])) {
+        $message = $message . " " . $response['message'];
+      }
+      return $message;
     }
 
     /**

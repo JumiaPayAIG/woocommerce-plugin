@@ -14,6 +14,13 @@ class WC_JumiaPay_Callback {
         $this->order = $order;
     }
 
+    /**
+     * If the order is in a pending state, update the order status based on the payment status
+     * 
+     * @param paymentStatus The status of the payment.
+     * 
+     * @return The return value is a boolean.
+     */
     public function handle($paymentStatus) {
         if($this->order->get_status() == 'pending'){
 
