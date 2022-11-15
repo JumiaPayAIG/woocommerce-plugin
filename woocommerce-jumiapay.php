@@ -33,7 +33,14 @@ define('JPAY_PLUGIN_VERSION', $pluginData['Version']);
 /**
  * check for the woocommerce plugin
  */
-if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) return;
+$muplugins = get_site_option('active_sitewide_plugins');
+$plugins = get_option('active_plugins');
+$mandatoryplugin = 'woocommerce/woocommerce.php';
+
+$mandatoryplugin_exist = in_array($mandatoryplugin, apply_filters('active_plugins', $plugins));
+$mandatoryplugin_exist_network = isset($muplugins[$mandatoryplugin]);
+
+if (!$mandatoryplugin_exist && !$mandatoryplugin_exist_network) return;
 
 //initiate plugin action
 add_action('plugins_loaded', 'init_jumiaPay_gateway_class', 0);
