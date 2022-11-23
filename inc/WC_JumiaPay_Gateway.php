@@ -55,7 +55,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     $this->method_description = esc_html('JumiaPay for WooCommerce - Payment Gateway Get additional business with JumiaPay. JumiaPay does not only avail local and international payments methods but also bring you millions of users in your country');
 
     $this->title = esc_html('JumiaPay');
-    $this->description = esc_html('Pay securely with JumiaPay and Get up to 10% discount');
+    $this->description = esc_html('Pay securely with JumiaPay');
     $this->instructions = $this->get_option('instructions', $this->description);
 
     $JpayClient = new WC_JumiaPay_Client(
