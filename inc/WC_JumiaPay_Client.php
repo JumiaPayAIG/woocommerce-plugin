@@ -295,8 +295,8 @@ class WC_JumiaPay_Client {
      */
     private function getBaseUrl() {
         return $this->isLiveEnv() ?
-            'https://api-pay'.$this->getTld() :
-            'https://api-staging-pay'.$this->getTld();
+            'https://api-easycash'.$this->getTld() :
+            'https://api-easycash'.$this->getTld();
     }
 
 
