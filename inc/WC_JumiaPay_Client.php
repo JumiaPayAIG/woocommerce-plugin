@@ -51,6 +51,11 @@ class WC_JumiaPay_Client {
      */
     public $sandboxApiKey;
 
+    /*
+     * @var string
+     */
+    public $shop;
+
     /** @var string */
     public $pluginVersion;
 
@@ -63,6 +68,7 @@ class WC_JumiaPay_Client {
         $sandboxShopConfig,
         $sandboxShopConfigId,
         $sandboxApiKey,
+        $shop,
         $pluginVersion
     ) {
         $this->pluginVersion = $pluginVersion;
@@ -77,6 +83,8 @@ class WC_JumiaPay_Client {
         $this->sandboxShopConfig=sanitize_text_field($sandboxShopConfig);
         $this->sandboxShopConfigId = sanitize_text_field($sandboxShopConfigId);
         $this->sandboxApiKey=sanitize_text_field($sandboxApiKey);
+
+        $this->shop=sanitize_text_field($shop);
     
     }
 
@@ -293,10 +301,19 @@ class WC_JumiaPay_Client {
     /**
      * @return string
      */
+    private function getShop() {
+        if ($this->isLiveEnv()) {
+            return $this->shop === 'easycash' ? 'easycash' : 'pay';
+        } else {
+            return $this->shop === 'easycash' ? 'easycash' : 'staging-pay';
+        }
+    }
+
+    /**
+     * @return string
+     */
     private function getBaseUrl() {
-        return $this->isLiveEnv() ?
-            'https://api-easycash'.$this->getTld() :
-            'https://api-easycash'.$this->getTld();
+        return 'https://api-'.$this->getShop().$this->getTld();
     }
 
 

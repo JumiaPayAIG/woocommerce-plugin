@@ -27,8 +27,8 @@ $pluginFields=array(
         'type' => 'select',
         'default' => 'easycash',
         'options' => array(
-            'EasyCash' => esc_html('easycash'),
-            'JumiaPay' => esc_html('jumiapay'),
+            'easycash' => esc_html('EasyCash'),
+            'jumiapay' => esc_html('JumiaPay'),
         ),
     ),
     "live_title"=> array(

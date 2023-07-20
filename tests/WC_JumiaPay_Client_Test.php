@@ -24,7 +24,7 @@ class WC_JumiaPay_Client_Test extends TestCase
     {
       return true;
     }
-    $this->client = new WC_JumiaPay_Client("", "", "", "", "", "", "", "", "", "");
+    $this->client = new WC_JumiaPay_Client("", "", "", "", "", "", "", "", "", "", "");
   }
 
   public function test_getErrorMessage_generalResponse()
