@@ -22,6 +22,15 @@ $pluginFields=array(
             'Sandbox' => esc_html('Sandbox'),
         ),
     ),
+    "shop"=> array(
+        'title' => esc_html('Shop'),
+        'type' => 'select',
+        'default' => 'easycash',
+        'options' => array(
+            'EasyCash' => esc_html('easycash'),
+            'JumiaPay' => esc_html('jumiapay'),
+        ),
+    ),
     "live_title"=> array(
         'title' => esc_html('Live Settings'),
         'type'  => 'title',
