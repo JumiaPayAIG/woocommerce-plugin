@@ -303,7 +303,7 @@ class WC_JumiaPay_Client {
      */
     private function getShop() {
         if ($this->isLiveEnv()) {
-            return $this->shop === 'easycash' ? 'easycash' : 'pay';
+            return $this->shop === 'easycash' ? 'easycash-prod' : 'pay';
         } else {
             return $this->shop === 'easycash' ? 'easycash' : 'staging-pay';
         }
