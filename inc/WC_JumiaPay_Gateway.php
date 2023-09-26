@@ -27,13 +27,14 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
   {
     //plugin main settings for the admin and check out page
     $this->id   = 'jumia-pay';
+    $brand = $this->get_option('shop') === 'easycash' ? 'EasyCash' : 'JumiaPay';
 
     $country = $this->get_option('environment') == 'Live' ? $this->get_option('country_list') : $this->get_option('sandbox_country_list');
     $image_url = '';
     
     switch ($country) {
       case 'EG':
-        $image_url = '/assets/image/secured_payfac_eg.png';
+        $image_url = $brand == 'easycash' ? "/assets/image/secured_payfac_easycash.png" : '/assets/image/secured_payfac_eg.png';
         break;
       case 'KE':
         $image_url = '/assets/image/secured_payfac_kenya.png';
@@ -50,8 +51,6 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
 
     $this->icon = apply_filters('woocommerce_jumiaPay_icon', plugins_url($image_url, dirname(__FILE__)));
     $this->has_fields = true;
-
-    $brand = $this->get_option('shop') === 'easycash' ? 'EasyCash' : 'JumiaPay';
 
     $this->method_title =  esc_html($brand);
     $this->method_description = esc_html($brand.' for WooCommerce - Payment Gateway Get additional business with '.$brand.'. '.$brand.' does not only avail local and international payments methods but also bring you millions of users in your country');
