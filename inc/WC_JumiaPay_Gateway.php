@@ -34,7 +34,7 @@ class WC_JumiaPay_Gateway extends WC_Payment_Gateway
     
     switch ($country) {
       case 'EG':
-        $image_url = $brand == 'easycash' ? "/assets/image/secured_payfac_easycash.png" : '/assets/image/secured_payfac_eg.png';
+        $image_url = $brand == 'EasyCash' ? "/assets/image/secured_payfac_easycash.png" : '/assets/image/secured_payfac_eg.png';
         break;
       case 'KE':
         $image_url = '/assets/image/secured_payfac_kenya.png';
