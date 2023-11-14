@@ -261,6 +261,9 @@ class WC_JumiaPay_Client {
      */
     private function getTld() {
         $tld = '';
+        if ($this->isLiveEnv() && $this->shop === 'easycash') {
+            return '.easycashpayment.com';
+        }
 
         switch ($this->getCountryCode()) {
             case "EG":
@@ -303,7 +306,7 @@ class WC_JumiaPay_Client {
      */
     private function getShop() {
         if ($this->isLiveEnv()) {
-            return $this->shop === 'easycash' ? 'easycash-prod' : 'pay';
+            return 'pay';
         } else {
             return $this->shop === 'easycash' ? 'easycash' : 'staging-pay';
         }
