@@ -261,7 +261,7 @@ class WC_JumiaPay_Client {
      */
     private function getTld() {
         $tld = '';
-        if ($this->isLiveEnv() && $this->shop === 'easycash') {
+        if ($this->shop === 'easycash') {
             return '.easycashpayment.com';
         }
 
@@ -305,11 +305,7 @@ class WC_JumiaPay_Client {
      * @return string
      */
     private function getShop() {
-        if ($this->isLiveEnv()) {
-            return 'pay';
-        } else {
-            return $this->shop === 'easycash' ? 'easycash' : 'staging-pay';
-        }
+        return $this->isLiveEnv() ? 'pay' : 'staging-pay';
     }
 
     /**
